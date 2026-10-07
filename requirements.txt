@@ -1,0 +1,5 @@
+# Scraper runtime dependencies.
+# curl_cffi is preferred (TLS fingerprint matching); scrape.py falls back
+# to requests automatically if curl_cffi is unavailable.
+curl_cffi==0.16.3
+requests==2.34.2

@@ -115,6 +115,23 @@ Ayuntamiento de Madrid open-data agenda feed
   installed on the home screen.
 - **Collapsible Leaflet map** with a pin per activity, hidden by default.
 
+## Setup
+
+Requirements: **Node ≥ 18** and **Python ≥ 3.9**.
+
+```bash
+# 1. Python scraper dependencies (virtualenv recommended)
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 2. Node dev/test tooling (optional — only needed to run the tests)
+npm install
+```
+
+The app itself has **no runtime Node dependencies**; `npm install` only pulls
+the test tooling (`puppeteer-core`).
+
 ## Run
 
 Double-click `start.bat` (Windows), or from WSL / Linux / macOS:
@@ -153,6 +170,10 @@ npm run test:api  # exercise the Python backend across many job shapes
 
 - Port: `PORT=8788` (env var).
 - Cache lives in `cache/agenda.json`; delete it to force a fresh fetch.
+
+## License
+
+[MIT](LICENSE)
 
 ---
 
