@@ -1,0 +1,18 @@
+{
+  "name": "madrid-kids",
+  "version": "1.0.0",
+  "description": "Finds children's cultural activities (títeres, cuentacuentos, teatro, talleres, circo…) run by the Ayuntamiento de Madrid, filtered by your child's age and the weeks ahead you want to plan.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "lint:js": "node test/jscheck.js",
+    "test:api": "bash test/api_harness.sh && .venv/bin/python test/analyze.py",
+    "test": "node test/jscheck.js && node test/e2e_browser.js"
+  },
+  "keywords": ["madrid","niños","actividades","titeres","cuentacuentos"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

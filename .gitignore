@@ -1,0 +1,15 @@
+node_modules/
+.venv/
+__pycache__/
+cache/
+tmp/
+test/runs/
+test/shots/
+*.log
+
+# Large local toolchains / build artifacts (not for git)
+android-sdk/
+.gradle-home/
+*.apk
+cap/android/
+cap/node_modules/
