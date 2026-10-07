@@ -55,9 +55,10 @@ bibliotecas, museos and Juntas de Distrito.
   (`de 3 a 6 años`, `a partir de 4 años`, `X meses` → bebés…), expands
   recurring and multi-day events into concrete dates honouring `excluded-days`,
   and ranks results so what you searched for floats to the top.
-- ⚡ **Fast by design.** ~40 KB and ~3 requests on first load
-  (≈365 ms on Fast 3G). The 160 KB map library is **lazy-loaded** only when the
-  map is opened.
+- ⚡ **Fast by design.** The whole UI is one ~45 KB HTML file (~14 KB gzipped)
+  with inline CSS/JS and inline SVG icons — ~3 requests on first load, no
+  bundler, no framework. The ~160 KB Leaflet map library is **lazy-loaded**
+  only when the map is opened.
 - 📲 **Installable PWA + native Android build.** Web manifest + service worker
   with an offline app shell (stale-while-revalidate), plus a Capacitor wrapper
   that ships a real `.apk`.
