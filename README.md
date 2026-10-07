@@ -9,6 +9,16 @@ Data source: **Ayuntamiento de Madrid** open data, dataset 206974 —
 (CC BY 4.0, no API key, updated daily). It aggregates events from centros
 culturales, socioculturales, bibliotecas, museos and Juntas de Distrito.
 
+## Screenshots
+
+| Search & filters | Map |
+| --- | --- |
+| ![Search form](docs/screenshots/form.png) | ![Map view](docs/screenshots/map.png) |
+
+| Results | Dark mode |
+| --- | --- |
+| ![Results list](docs/screenshots/results.png) | ![Dark mode](docs/screenshots/dark.png) |
+
 ## Run
 
 Double-click `start.bat` (Windows), or from WSL:
