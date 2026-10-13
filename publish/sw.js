@@ -20,6 +20,8 @@ const SHELL_ASSETS = [
   SHELL_URL + "engine.js",
   SHELL_URL + "api-shim.js",
   SHELL_URL + "manifest.webmanifest",
+  SHELL_URL + "icon-192.png",
+  SHELL_URL + "icon-512.png",
 ];
 
 self.addEventListener("install", (e) => {
