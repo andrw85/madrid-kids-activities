@@ -10,6 +10,8 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="manifest" href="manifest.webmanifest"/>
 <title>Actividades infantiles — Madrid</title>
+<script src="engine.js"></script>
+<script src="api-shim.js"></script>
 <script>
 // Apply saved theme ASAP to avoid a flash of the wrong palette.
 (function(){
@@ -113,6 +115,15 @@
 
   /* SEARCH */
   .search{padding:8px 18px 24px}
+  .cats{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .cat{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent-soft-ink);
+    border:1.5px solid transparent;border-radius:20px;padding:7px 13px;font-size:13px;font-weight:600;
+    cursor:pointer;font-family:inherit;line-height:1.2}
+  .cat.on{background:var(--accent);color:var(--accent-ink)}
+  .clearbtn{width:100%;background:transparent;color:var(--muted);border:1.5px solid var(--line);
+    font-size:13px;font-weight:700;padding:11px;border-radius:11px;font-family:inherit;cursor:pointer;margin-top:10px}
+  .chk{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer}
+  .chk input{width:20px;height:20px;accent-color:var(--accent);margin:0;flex:none}
   .fld{margin:12px 0}
   .fld label{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
   .fld input,.fld select{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:16px;font-family:inherit;background:var(--card);color:var(--ink)}
@@ -130,6 +141,29 @@
   .empty{padding:70px 24px;text-align:center;color:var(--muted)}
   .empty .big{font-size:46px;margin-bottom:10px}
 
+  /* Day group headers + loading */
+  .daysep{display:flex;align-items:baseline;gap:8px;margin:22px 2px 2px;padding:0 2px}
+  .daysep .d{font-size:16px;font-weight:900;color:var(--ink)}
+  .daysep .d.today{color:var(--accent)}
+  .daysep .n{font-size:11px;color:var(--muted);font-weight:600}
+  .wkhdr{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);
+    margin:22px 2px 0;padding:0 2px;display:flex;align-items:center;gap:8px}
+  .wkhdr .ln{flex:1;height:1.5px;background:var(--line)}
+  .bar{height:4px;background:var(--accent-soft);border-radius:4px;overflow:hidden;margin:8px 18px}
+  .bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+  .statusmsg{font-size:12px;color:var(--muted);text-align:center;padding:2px 18px;min-height:16px}
+  .skel{background:var(--card);border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,.1);overflow:hidden}
+  .skel .sh{height:116px;background:linear-gradient(90deg,var(--accent-soft),var(--line),var(--accent-soft));
+    background-size:200% 100%;animation:sh 1.2s infinite}
+  .skel .sb{padding:14px}
+  .skel .sb .ln{height:11px;border-radius:6px;margin:7px 0;background:linear-gradient(90deg,var(--accent-soft),var(--line),var(--accent-soft));background-size:200% 100%;animation:sh 1.2s infinite}
+  @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  details.standing{margin:22px 2px 0}
+  details.standing summary{cursor:pointer;font-weight:800;color:var(--accent);font-size:14px;list-style:none;
+    padding:12px 14px;background:var(--card);border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  details.standing summary::-webkit-details-marker{display:none}
+  details.standing .feed{margin-top:12px;padding:0}
+
   /* ===== Bottom nav ===== */
   .nav{position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--card);border-top:1px solid var(--line);
     display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
@@ -146,18 +180,11 @@
 
 <script>
 /* =========================================================================
-   FASE 1 — estructura visual con datos de ejemplo.
-   En fases siguientes se injerta el motor real (engine.js + api-shim.js),
-   el mapa Leaflet, cercanía y PWA. Los nombres de vista y los ids se
-   mantienen estables para ese injerto.
+   FASE 2 — motor real injertado. Búsqueda vía /api/search (api-shim +
+   engine.js), resultados reales como tiles Magazine agrupados por día.
+   Favoritos persistentes en localStorage. Mapa Leaflet y cercanía: Fase 3-4.
    ========================================================================= */
-const DATA = [
-  {t:"Cuentacuentos: El bosque mágico", time:"11:00", venue:"Biblioteca Retiro · Retiro", cat:"Cuentos", emoji:"🧸", free:true,  age:"3–6", x:58, y:48},
-  {t:"Taller de circo para peques",     time:"17:30", venue:"C.C. Galileo · Chamberí",    cat:"Circo",  emoji:"🎪", free:false, age:"5–10",x:40, y:30},
-  {t:"Teatro familiar: Pulgarcito",     time:"12:00", venue:"Fernán Gómez · Centro",      cat:"Teatro", emoji:"🎭", free:false, age:"4+",  x:50, y:60},
-  {t:"Concierto para bebés",            time:"18:00", venue:"CentroCentro · Centro",      cat:"Música", emoji:"🎵", free:true,  age:"0–3", x:66, y:66},
-  {t:"Pintura en familia",              time:"18:30", venue:"Matadero · Arganzuela",      cat:"Talleres",emoji:"🎨",free:true,  age:"todas",x:34, y:74},
-];
+
 const THEMES = [
   ["magazine","Original","linear-gradient(135deg,#f857a6,#ff5858)"],
   ["grape","Uva","linear-gradient(135deg,#9b3fb0,#7b2d8e)"],
@@ -168,48 +195,305 @@ const THEMES = [
   ["dark","Oscuro","linear-gradient(135deg,#7c5cff,#4fd1c5)"],
 ];
 
-const FAVS = new Set();
+// Category -> emoji for the tile hero.
+const CAT_EMOJI = {
+  "CuentacuentosTiteresMarionetas":"🧸","TeatroPerformance":"🎭","CircoMagia":"🎪",
+  "CursosTalleres":"🎨","Musica":"🎵","DanzaBaile":"💃","CineActividadesAudiovisuales":"🎬",
+  "ExcursionesItinerariosVisitas":"🧭","ClubesLectura":"📚","ActividadesCalleArteUrbano":"🖌️","Fiestas":"🎉"
+};
+function catEmoji(a){ return CAT_EMOJI[a.category] || "🎈"; }
+
+// Category chips (key + short label) shown on Home for quick filtering.
+const CATS = [
+  ["CuentacuentosTiteresMarionetas","🧸 Cuentos"],
+  ["TeatroPerformance","🎭 Teatro"],
+  ["CircoMagia","🎪 Circo"],
+  ["CursosTalleres","🎨 Talleres"],
+  ["Musica","🎵 Música"],
+  ["DanzaBaile","💃 Danza"],
+  ["CineActividadesAudiovisuales","🎬 Cine"],
+  ["ExcursionesItinerariosVisitas","🧭 Visitas"],
+  ["ClubesLectura","📚 Lectura"],
+  ["ActividadesCalleArteUrbano","🖌️ Calle"],
+  ["Fiestas","🎉 Fiestas"],
+];
+const selCats = new Set();      // selected category keys
+let freeOnlyQuick = false;      // "Gratis" quick chip
+
+// ---- state ----
+let lastResult = null;         // raw result from the engine
 let currentView = "home";
+const FAV_KEY = "mk_favs";
+let FAVS = new Map();   // id -> full activity object (so favs show even outside current search)
+try {
+  const raw = JSON.parse(localStorage.getItem(FAV_KEY)||"[]");
+  if(Array.isArray(raw)){
+    // migrate: old format was an array of ids (strings). New format: array of activity objects.
+    raw.forEach(x=>{
+      if(x && typeof x==="object"){ FAVS.set(favId(x), x); }
+    });
+  }
+} catch(e){}
+function favId(a){ return (a && (a.id || (a.title+"|"+((a.dates&&a.dates[0])||"")))) || ""; }
+function isFav(id){ return FAVS.has(id); }
+function saveFavs(){
+  try{ localStorage.setItem(FAV_KEY, JSON.stringify([...FAVS.values()])); }catch(e){}
+  updateBadge();
+}
+// Toggle a favorite given the full activity object.
+function toggleFavObj(a){
+  const id=favId(a);
+  if(FAVS.has(id)) FAVS.delete(id); else FAVS.set(id, a);
+  saveFavs();
+  return FAVS.has(id);
+}
+
+// ---- theme ----
 function getTheme(){ return document.documentElement.getAttribute("data-apptheme") || "magazine"; }
 function setTheme(id){
   document.documentElement.setAttribute("data-apptheme", id);
   try{ localStorage.setItem("mk_colorTheme", id); }catch(e){}
   const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta){ const dark=id==="dark"; meta.setAttribute("content", dark?"#0f1118":"#ffffff"); }
+  if(meta){ meta.setAttribute("content", id==="dark"?"#0f1118":"#ffffff"); }
 }
 
-function tiles(){
-  return DATA.map((it,i)=>`
-    <div class="tile"><div class="hero hc${(i%5)+1}">
-      <span class="cat">${it.cat}</span><span class="emoji">${it.emoji}</span><h4>${it.t}</h4>
-      <button class="tilefav" data-i="${i}" title="Favorito">☆</button></div>
-      <div class="cardbody"><div class="m">🕐 ${it.time} · 📍 ${it.venue}</div>
-      <div class="r"><span class="t ${it.free?'free':''}">${it.free?'gratis':'de pago'}</span>
-        <span class="t">${it.age} años</span></div>
-      <div class="btns"><a class="g">🧭 Cómo llegar</a><a class="p">Detalles</a></div></div></div>`).join("");
+// ---- date helpers (ported from the original app) ----
+const DOW=["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
+const MON=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function tomorrowISO(){ const d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+function dObj(iso){ return new Date(iso+"T00:00:00"); }
+function dayLabel(iso){
+  if(iso===todayISO()) return "Hoy";
+  if(iso===tomorrowISO()) return "Mañana";
+  const d=dObj(iso);
+  return `${DOW[(d.getDay()+6)%7].replace(/^./,c=>c.toUpperCase())} ${d.getDate()} ${MON[d.getMonth()]}`;
 }
-function pins(){
-  return DATA.map((it,i)=>`<span class="pin ${it.free?'free':''}" data-i="${i}" style="left:${it.x}%;top:${it.y}%">${it.emoji} ${it.time}</span>`).join("");
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function prettyDist(s){ return (s||"").replace(/([a-z])([A-Z])/g,"$1 $2").replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()); }
+function ageText(a){
+  if(!a.age_known) return "edad n/d";
+  const [lo,hi]=a.age_range||[];
+  if(lo!=null&&hi!=null) return lo===hi?`${lo} años`:`${lo}–${hi} años`;
+  if(lo!=null) return `desde ${lo}`;
+  if(hi!=null) return `hasta ${hi}`;
+  return "todas edades";
 }
+function dirLink(a){
+  if(a.lat&&a.lon) return `https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}`;
+  const q=encodeURIComponent([a.venue,a.address,"Madrid"].filter(Boolean).join(", "));
+  return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+}
+async function shareActivity(a){
+  const text=`${a.title}${a.time?` · ${a.time}`:""}${a.venue?`\n${a.venue}`:""}`;
+  try{
+    if(navigator.share) await navigator.share({title:a.title,text,url:a.link||location.href});
+    else if(navigator.clipboard) await navigator.clipboard.writeText(text+(a.link?`\n${a.link}`:""));
+  }catch(_){}
+}
+
+// ---- tile (Magazine card) for a real activity ----
+let heroSeq = 0;
+function tileHTML(a){
+  const hc = (heroSeq++ % 5) + 1;
+  const id = favId(a);
+  const fav = isFav(id);
+  const price = a.free ? `<span class="t free">gratis</span>`
+    : `<span class="t">${a.price?esc(a.price.slice(0,18)):'de pago'}</span>`;
+  const dist = a.district ? ` · ${esc(prettyDist(a.district))}` : "";
+  return `<div class="tile">
+    <div class="hero hc${hc}">
+      <span class="cat">${esc(a.category_label||"")}</span>
+      <span class="emoji">${catEmoji(a)}</span>
+      <h4>${esc(a.title)}</h4>
+      <button class="tilefav ${fav?'on':''}" data-fav="${esc(id)}" title="Favorito">${fav?'★':'☆'}</button>
+    </div>
+    <div class="cardbody">
+      <div class="m">${a.time?`🕐 ${esc(a.time)} · `:""}📍 ${esc(a.venue||"")}${dist}</div>
+      <div class="r">${price}<span class="t">${esc(ageText(a))}</span></div>
+      <div class="btns">
+        <a class="g" href="${dirLink(a)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>
+        ${a.link?`<a class="p" href="${esc(a.link)}" target="_blank" rel="noopener">Detalles</a>`:`<a class="p" data-share="${esc(id)}">🔗 Compartir</a>`}
+      </div>
+    </div></div>`;
+}
+
+// Find an activity by its favId: prefer the current result, fall back to saved favs.
+function actById(id){
+  if(lastResult){
+    const hit=lastResult.activities.find(a=>favId(a)===id);
+    if(hit) return hit;
+  }
+  return FAVS.get(id) || null;
+}
+
+// ---- Home feed: group by day across the week windows ----
+function renderHome(){
+  const host=document.getElementById("v-home-feed");
+  if(!host) return;
+  if(!lastResult){ host.innerHTML=""; return; }
+  heroSeq=0;
+  const acts=lastResult.activities;
+  const dated=acts.filter(a=>!a.standing);
+  const standing=acts.filter(a=>a.standing);
+  let html="";
+
+  (lastResult.weeks||[]).forEach(w=>{
+    const dayMap={};
+    dated.forEach(a=>a.dates.forEach(d=>{ if(d>=w.start&&d<=w.end){ (dayMap[d]=dayMap[d]||[]).push(a); } }));
+    const days=Object.keys(dayMap).sort();
+    if(!days.length) return;
+    html+=`<div class="wkhdr"><span>${esc(w.label)}</span><span class="ln"></span></div>`;
+    days.forEach(day=>{
+      const list=dayMap[day].slice().sort((x,y)=>(y.score||0)-(x.score||0));
+      const today=day===todayISO();
+      html+=`<div class="daysep"><span class="d ${today?'today':''}">${today?'⭐ ':''}${esc(dayLabel(day))}</span><span class="n">${list.length}</span></div>`;
+      html+=`<div class="feed">${list.map(tileHTML).join("")}</div>`;
+    });
+  });
+
+  if(standing.length){
+    html+=`<details class="standing"><summary>Programas permanentes (${standing.length})</summary>
+      <div class="feed">${standing.map(tileHTML).join("")}</div></details>`;
+  }
+
+  if(!html) html=`<div class="empty"><div class="big">🔍</div>No hay actividades para estos filtros.<br>Prueba a ampliar el periodo o quitar filtros.</div>`;
+  host.innerHTML=html;
+  wireFeed(host);
+}
+
+function wireFeed(host){
+  host.querySelectorAll(".tilefav").forEach(s=> s.onclick=()=>{
+    const id=s.dataset.fav;
+    const a=actById(id);
+    if(a){ const now=toggleFavObj(a); s.classList.toggle("on",now); s.textContent=now?"★":"☆"; }
+  });
+  host.querySelectorAll("[data-share]").forEach(b=> b.onclick=(e)=>{
+    e.preventDefault(); const a=actById(b.dataset.share); if(a) shareActivity(a);
+  });
+}
+
+// ---- Favorites view ----
+function renderFavs(){
+  const host=document.getElementById("v-fav");
+  const acts=[...FAVS.values()];
+  if(!acts.length){
+    host.innerHTML=`<div class="secttl">★ Favoritos</div>
+      <div class="empty"><div class="big">★</div>Aún no has guardado nada.<br>Toca la estrella en una tarjeta o en el mapa.</div>`;
+    return;
+  }
+  heroSeq=0;
+  host.innerHTML=`<div class="secttl">★ Favoritos (${acts.length})</div>
+    <div class="feed">${acts.map(tileHTML).join("")}</div>`;
+  wireFeed(host);
+}
+
+// ---- Map view (placeholder; real Leaflet in Fase 3) ----
+function renderMapPins(){
+  const canvas=document.getElementById("mapcanvas");
+  if(!canvas || !lastResult) return;
+  const withGeo=lastResult.activities.filter(a=>a.lat&&a.lon).slice(0,30);
+  // crude projection of Madrid lat/lon into the box, just for the placeholder
+  const latMin=40.33,latMax=40.52,lonMin=-3.80,lonMax=-3.60;
+  const pins=withGeo.map(a=>{
+    const x=((a.lon-lonMin)/(lonMax-lonMin))*100;
+    const y=(1-(a.lat-latMin)/(latMax-latMin))*100;
+    return `<span class="pin ${a.free?'free':''}" data-fav="${esc(favId(a))}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%">${catEmoji(a)} ${esc(a.time||"")}</span>`;
+  }).join("");
+  canvas.querySelectorAll(".pin").forEach(p=>p.remove());
+  canvas.insertAdjacentHTML("afterbegin", pins);
+  canvas.querySelectorAll(".pin").forEach(p=> p.onclick=()=>showPopup(p.dataset.fav));
+  if(withGeo.length) showPopup(favId(withGeo[0]));
+}
+function showPopup(id){
+  const mc=document.getElementById("mapcard"); if(!mc) return;
+  const a=actById(id); if(!a){ mc.innerHTML=""; return; }
+  const fav=isFav(id);
+  mc.innerHTML=`<div class="head"><span class="em">${catEmoji(a)}</span>
+    <div class="mc"><h4>${esc(a.title)}</h4><div class="mm">${a.time?`🕐 ${esc(a.time)} · `:""}📍 ${esc(a.venue||"")}</div></div>
+    <button class="fav ${fav?'on':''}" data-fav="${esc(id)}">${fav?'★':'☆'}</button>
+    <button class="close">✕</button></div>
+    <div class="r"><span class="t">${esc(a.category_label||"")}</span>
+      <span class="t ${a.free?'free':''}">${a.free?'gratis':'de pago'}</span><span class="t">${esc(ageText(a))}</span></div>
+    <div class="btns">
+      <a class="g" data-share="1">🔗 Compartir</a>
+      <a class="g" href="${dirLink(a)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>
+      ${a.link?`<a class="p" href="${esc(a.link)}" target="_blank" rel="noopener">Ver detalles</a>`:""}</div>`;
+  mc.querySelector("[data-share]")?.addEventListener("click",(e)=>{e.preventDefault();shareActivity(a);});
+}
+
 function swatches(cur){
   return THEMES.map(([id,nm,grad])=>`
     <div class="sw ${id===cur?'on':''}" data-theme="${id}">
       <div class="dot" style="background:${grad}"></div><div class="nm">${nm}</div></div>`).join("");
 }
 
+// Quick-filter chips on Home: "Gratis" + the category chips.
+function catPills(){
+  let html=`<button class="pill ${freeOnlyQuick?'on':''}" data-free="1">🆓 Gratis</button>`;
+  html+=CATS.map(([key,label])=>`<button class="pill ${selCats.has(key)?'on':''}" data-cat="${key}">${label}</button>`).join("");
+  return html;
+}
+function wireCatPills(){
+  const host=document.getElementById("catpills"); if(!host) return;
+  host.querySelectorAll("[data-cat]").forEach(b=> b.onclick=()=>{
+    const k=b.dataset.cat;
+    if(selCats.has(k)) selCats.delete(k); else selCats.add(k);
+    b.classList.toggle("on",selCats.has(k));
+    runSearch();   // re-run filtered
+  });
+  const fb=host.querySelector("[data-free]");
+  if(fb) fb.onclick=()=>{
+    freeOnlyQuick=!freeOnlyQuick;
+    fb.classList.toggle("on",freeOnlyQuick);
+    const fo=document.getElementById("free_only"); if(fo) fo.checked=freeOnlyQuick;
+    runSearch();
+  };
+}
+
+// Category chips inside the Buscar form (shares selCats state with Home).
+function searchCats(){
+  return CATS.map(([key,label])=>`<button type="button" class="cat ${selCats.has(key)?'on':''}" data-cat="${key}">${label}</button>`).join("");
+}
+function wireSearchCats(){
+  const host=document.getElementById("searchcats"); if(!host) return;
+  host.querySelectorAll("[data-cat]").forEach(b=> b.onclick=()=>{
+    const k=b.dataset.cat;
+    if(selCats.has(k)) selCats.delete(k); else selCats.add(k);
+    b.classList.toggle("on",selCats.has(k));
+    // keep the Home quick chips in sync
+    const hp=document.querySelector(`#catpills [data-cat="${k}"]`);
+    if(hp) hp.classList.toggle("on",selCats.has(k));
+  });
+}
+function clearFilters(){
+  selCats.clear(); freeOnlyQuick=false;
+  const age=document.getElementById("age"); if(age) age.value="3";
+  const wk=document.getElementById("weeks"); if(wk) wk.value="3";
+  const q=document.getElementById("query"); if(q) q.value="";
+  const fo=document.getElementById("free_only"); if(fo) fo.checked=false;
+  const sa=document.getElementById("strict_age"); if(sa) sa.checked=false;
+  const ds=document.getElementById("district"); if(ds) ds.value="";
+  document.querySelectorAll("#searchcats .cat.on, #catpills .pill.on").forEach(b=>b.classList.remove("on"));
+  try{ localStorage.removeItem("mk_lastSearch"); }catch(_){}
+  runSearch();
+}
+
+// ---- shell / navigation ----
 const app = document.getElementById("app");
 function render(){
-  const theme = getTheme();
+  const theme=getTheme();
   app.innerHTML = `
     <div class="view" id="v-home">
-      <div class="top"><h3>Qué hacer<br/>con los peques</h3><div class="sub">Madrid · esta semana</div></div>
-      <div class="pills"><span class="pill on">Todo</span><span class="pill">Cuentos</span>
-        <span class="pill">Teatro</span><span class="pill">Música</span><span class="pill">Circo</span></div>
-      <div class="feed">${tiles()}</div>
+      <div class="top"><h3>Qué hacer<br/>con los peques</h3><div class="sub">Madrid · Ayto. de Madrid</div></div>
+      <div class="pills" id="catpills">${catPills()}</div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="statusmsg" id="status"></div>
+      <div id="v-home-feed"></div>
     </div>
 
     <div class="view" id="v-map">
-      <div class="mapcanvas"><div class="river"></div>${pins()}<div class="mapcard" id="mapcard"></div></div>
+      <div class="mapcanvas" id="mapcanvas"><div class="river"></div><div class="mapcard" id="mapcard"></div></div>
     </div>
 
     <div class="view" id="v-fav"></div>
@@ -217,20 +501,23 @@ function render(){
     <div class="view" id="v-search">
       <div class="secttl">🔍 Buscar</div>
       <div class="search">
-        <div class="fld"><label>Edad</label><input id="age" type="number" value="3"/></div>
-        <div class="fld"><label>Periodo</label><select id="weeks"><option>3 semanas</option></select></div>
-        <div class="fld"><label>Distrito</label><select id="district"><option>Todos los distritos</option></select></div>
+        <div class="fld"><label>Edad</label><input id="age" type="number" value="3" min="0" max="17" inputmode="numeric"/></div>
+        <div class="fld"><label>Periodo</label><select id="weeks">
+          <option value="1">Esta semana</option><option value="2">2 semanas</option>
+          <option value="3" selected>3 semanas</option><option value="4">4 semanas</option><option value="6">6 semanas</option></select></div>
+        <div class="fld"><label>Distrito</label><select id="district"><option value="">Todos los distritos</option></select></div>
         <div class="fld"><label>Texto</label><input id="query" placeholder="títeres, música…"/></div>
-        <button class="go">Buscar actividades 🔎</button>
+        <div class="fld"><label>Tipo de actividad</label><div class="cats" id="searchcats">${searchCats()}</div></div>
+        <label class="chk"><input id="free_only" type="checkbox"/> Solo gratis</label>
+        <label class="chk"><input id="strict_age" type="checkbox"/> Edad exacta</label>
+        <button class="go" id="go">Buscar actividades 🔎</button>
+        <button class="clearbtn" id="clearBtn">Limpiar filtros</button>
       </div>
     </div>
 
     <div class="view" id="v-settings">
       <div class="secttl">⚙️ Ajustes</div>
-      <div class="settings">
-        <div class="lbl">Tema de color</div>
-        <div class="swatches">${swatches(theme)}</div>
-      </div>
+      <div class="settings"><div class="lbl">Tema de color</div><div class="swatches">${swatches(theme)}</div></div>
     </div>
 
     <div class="nav">
@@ -240,7 +527,8 @@ function render(){
       <button data-v="search"><span class="ic">🔍</span>Buscar</button>
       <button data-v="settings"><span class="ic">⚙️</span>Ajustes</button>
     </div>`;
-  wire();
+  wireShell();
+  updateBadge();
   showView(currentView);
 }
 
@@ -248,59 +536,106 @@ function showView(v){
   currentView=v;
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   app.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+  if(v==="home") renderHome();
   if(v==="fav") renderFavs();
-  if(v==="map") showPopup(0);
+  if(v==="map") renderMapPins();
 }
 
-function wire(){
+function wireShell(){
   app.querySelectorAll(".nav button").forEach(b=> b.onclick=()=>showView(b.dataset.v));
   app.querySelectorAll(".sw").forEach(s=> s.onclick=()=>{ setTheme(s.dataset.theme); render(); });
-  app.querySelectorAll(".pin").forEach(p=> p.onclick=()=>showPopup(parseInt(p.dataset.i,10)));
+  wireCatPills();
+  wireSearchCats();
+  const clr=document.getElementById("clearBtn");
+  if(clr) clr.onclick=clearFilters;
   const mc=document.getElementById("mapcard");
-  if(mc){ mc.addEventListener("click",e=>{
+  if(mc) mc.addEventListener("click",e=>{
     if(e.target.classList.contains("close")){ mc.innerHTML=""; return; }
-    if(e.target.classList.contains("fav")){ const i=+e.target.dataset.i; toggleFav(i); showPopup(i); }
-  }); }
-  app.querySelectorAll(".tilefav").forEach(s=> s.onclick=()=>{ toggleFav(+s.dataset.i); syncStars(); });
-  syncStars(); updateBadge();
+    if(e.target.classList.contains("fav")){ const id=e.target.dataset.fav;
+      const a=actById(id); if(a){ toggleFavObj(a); showPopup(id); renderMapPins(); } }
+  });
+  const go=document.getElementById("go");
+  if(go) go.onclick=runSearch;
+  const dist=document.getElementById("district");
+  if(dist) dist.onchange=()=>{ /* Fase 4: client-side district filter */ };
 }
 
-function toggleFav(i){ FAVS.has(i)?FAVS.delete(i):FAVS.add(i); updateBadge(); }
-
-function showPopup(i){
-  const mc=document.getElementById("mapcard"); if(!mc) return;
-  const it=DATA[i], f=FAVS.has(i);
-  mc.innerHTML=`<div class="head"><span class="em">${it.emoji}</span>
-    <div class="mc"><h4>${it.t}</h4><div class="mm">🕐 ${it.time} · 📍 ${it.venue}</div></div>
-    <button class="fav ${f?'on':''}" data-i="${i}">${f?'★':'☆'}</button>
-    <button class="close">✕</button></div>
-    <div class="r"><span class="t">${it.cat}</span>
-      <span class="t ${it.free?'free':''}">${it.free?'gratis':'de pago'}</span><span class="t">${it.age} años</span></div>
-    <div class="btns"><a class="g">🔗 Compartir</a><a class="g">🧭 Cómo llegar</a><a class="p">Ver detalles</a></div>`;
-}
-function syncStars(){
-  app.querySelectorAll(".tilefav").forEach(s=>{ const on=FAVS.has(+s.dataset.i);
-    s.classList.toggle("on",on); s.textContent=on?"★":"☆"; });
-}
 function updateBadge(){
   const b=app.querySelector('.nav button[data-v="fav"]'); if(!b) return;
   let bd=b.querySelector(".badge");
   if(FAVS.size){ if(!bd){bd=document.createElement("span");bd.className="badge";b.appendChild(bd);} bd.textContent=FAVS.size; }
   else if(bd){ bd.remove(); }
 }
-function renderFavs(){
-  const host=document.getElementById("v-fav");
-  if(!FAVS.size){ host.innerHTML=`<div class="secttl">★ Favoritos</div>
-    <div class="empty"><div class="big">★</div>Aún no has guardado nada.<br/>Toca la estrella en una tarjeta o en el mapa.</div>`; return; }
-  let cards=""; [...FAVS].forEach(i=>{ const it=DATA[i];
-    cards+=`<div class="tile"><div class="hero hc${(i%5)+1}"><span class="cat">${it.cat}</span>
-      <span class="emoji">${it.emoji}</span><h4>${it.t}</h4></div>
-      <div class="cardbody"><div class="m">🕐 ${it.time} · 📍 ${it.venue}</div>
-      <div class="btns"><a class="g">🧭 Cómo llegar</a><a class="p">Detalles</a></div></div></div>`; });
-  host.innerHTML=`<div class="secttl">★ Favoritos (${FAVS.size})</div><div class="feed">${cards}</div>`;
+
+// ---- search (streaming via api-shim) ----
+function showSkeleton(){
+  const host=document.getElementById("v-home-feed"); if(!host) return;
+  let s=""; for(let i=0;i<4;i++) s+=`<div class="skel" style="margin:14px 18px"><div class="sh"></div>
+    <div class="sb"><div class="ln" style="width:70%"></div><div class="ln" style="width:45%"></div><div class="ln" style="width:90%"></div></div></div>`;
+  host.innerHTML=s;
+}
+function populateDistricts(acts){
+  const sel=document.getElementById("district"); if(!sel) return;
+  const cur=sel.value;
+  const set=new Set(acts.map(a=>a.district).filter(Boolean));
+  const sorted=[...set].sort((a,b)=>prettyDist(a).localeCompare(prettyDist(b)));
+  sel.innerHTML=`<option value="">Todos los distritos</option>`+sorted.map(d=>`<option value="${esc(d)}">${esc(prettyDist(d))}</option>`).join("");
+  if(set.has(cur)) sel.value=cur;
+}
+async function runSearch(){
+  const go=document.getElementById("go");
+  const bar=document.getElementById("bar");
+  const statusEl=document.getElementById("status");
+  if(go) go.disabled=true;
+  showView("home");
+  showSkeleton();
+  if(bar) bar.style.width="8%";
+  if(statusEl) statusEl.textContent="Buscando…";
+  const job={
+    age: parseInt((document.getElementById("age")||{}).value||"3",10),
+    weeks: parseInt((document.getElementById("weeks")||{}).value||"3",10),
+    categories: [...selCats],
+    free_only: freeOnlyQuick || !!(document.getElementById("free_only")||{}).checked,
+    strict_age: !!(document.getElementById("strict_age")||{}).checked,
+    query: ((document.getElementById("query")||{}).value||"").trim(),
+  };
+  try{ localStorage.setItem("mk_lastSearch", JSON.stringify(job)); }catch(_){}
+  try{
+    const resp=await fetch("/api/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(job)});
+    const reader=resp.body.getReader(); const dec=new TextDecoder(); let buf="",pct=8;
+    while(true){
+      const {done,value}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true}); let idx;
+      while((idx=buf.indexOf("\n"))>=0){
+        const line=buf.slice(0,idx); buf=buf.slice(idx+1);
+        if(!line.trim()) continue;
+        let msg; try{ msg=JSON.parse(line); }catch(_){ continue; }
+        if(msg.type==="progress"){ if(statusEl) statusEl.textContent=msg.data.msg||""; pct=Math.min(90,pct+18); if(bar) bar.style.width=pct+"%"; }
+        else if(msg.type==="result"){ if(bar) bar.style.width="100%"; lastResult=msg.data; populateDistricts(msg.data.activities); if(statusEl) statusEl.textContent=""; renderHome(); updateBadge(); }
+        else if(msg.type==="error"){ if(statusEl) statusEl.textContent="Error: "+msg.data; }
+      }
+    }
+  }catch(err){
+    if(statusEl) statusEl.textContent="Error de conexión: "+(err&&err.message||err);
+  }finally{
+    if(go) go.disabled=false;
+    setTimeout(()=>{ if(bar) bar.style.width="0"; },700);
+  }
 }
 
-render();
+// ---- boot ----
+(function restore(){
+  let saved; try{ saved=JSON.parse(localStorage.getItem("mk_lastSearch")||"null"); }catch(_){ saved=null; }
+  render();
+  // apply saved search fields then auto-run
+  if(saved){
+    const set=(id,v)=>{ const el=document.getElementById(id); if(el!=null&&v!=null) el.value=v; };
+    set("age",saved.age); set("weeks",String(saved.weeks)); set("query",saved.query||"");
+    const fo=document.getElementById("free_only"); if(fo) fo.checked=!!saved.free_only;
+    const sa=document.getElementById("strict_age"); if(sa) sa.checked=!!saved.strict_age;
+  }
+  requestAnimationFrame(runSearch);
+})();
 </script>
 </body>
 </html>
