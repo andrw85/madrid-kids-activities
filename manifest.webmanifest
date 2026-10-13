@@ -2,8 +2,8 @@
   "name": "Actividades infantiles — Madrid",
   "short_name": "Actividades Madrid",
   "description": "Títeres, cuentacuentos, teatro y talleres municipales para niños en Madrid.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f6f3fa",
@@ -12,16 +12,22 @@
   "categories": ["kids", "events", "lifestyle"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%237b2d8e'/%3E%3Ctext x='96' y='104' font-size='110' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%237b2d8e'/%3E%3Ctext x='256' y='280' font-size='300' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
