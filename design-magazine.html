@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Magazine + barra inferior + temas — maqueta</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:#e9ecf2;color:#1f2430;padding:28px 18px 70px}
+  .intro{max-width:900px;margin:0 auto 24px}
+  .intro h1{margin:0 0 6px;font-size:23px}
+  .intro p{margin:0;color:#6b7280;font-size:14px;line-height:1.55}
+  .wrapc{display:flex;justify-content:center}
+
+  .phone{width:330px;height:700px;border-radius:40px;background:#0c0c0f;padding:12px;
+    box-shadow:0 20px 55px rgba(0,0,0,.3);position:relative}
+  .phone::before{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);
+    width:118px;height:22px;background:#0c0c0f;border-radius:0 0 14px 14px;z-index:60}
+
+  /* ===== THEME VARIABLES (set on .screen via data-theme) ===== */
+  .screen{
+    --accent:#111; --accent-ink:#fff; --accent-soft:#f2f2f3; --accent-soft-ink:#333;
+    --bg:#fff; --ink:#17171a; --muted:#999; --card:#fff; --line:#ececf0;
+    --hero1:#f857a6; --hero2:#ff5858;   /* gradient for hero/pins */
+    width:100%;height:100%;border-radius:29px;overflow:hidden;position:relative;background:var(--bg);color:var(--ink)}
+
+  .screen[data-theme="magazine"]{ --accent:#111; --accent-ink:#fff; --accent-soft:#f2f2f3; --accent-soft-ink:#333 }
+  .screen[data-theme="grape"]{ --accent:#7b2d8e; --hero1:#9b3fb0; --hero2:#7b2d8e; --accent-soft:#f3e8f7; --accent-soft-ink:#7b2d8e }
+  .screen[data-theme="ocean"]{ --accent:#0e7490; --hero1:#06b6d4; --hero2:#2563eb; --accent-soft:#e0f2fe; --accent-soft-ink:#0369a1 }
+  .screen[data-theme="sunset"]{ --accent:#e11d48; --hero1:#fb7185; --hero2:#f97316; --accent-soft:#ffe4e6; --accent-soft-ink:#be123c }
+  .screen[data-theme="forest"]{ --accent:#047857; --hero1:#34d399; --hero2:#059669; --accent-soft:#dcfce7; --accent-soft-ink:#047857 }
+  .screen[data-theme="candy"]{ --accent:#db2777; --hero1:#f472b6; --hero2:#a855f7; --accent-soft:#fce7f3; --accent-soft-ink:#be185d }
+  .screen[data-theme="dark"]{
+    --accent:#7c5cff; --accent-ink:#fff; --accent-soft:#1b2030; --accent-soft-ink:#c4b5fd;
+    --bg:#0f1118; --ink:#e8eaf2; --muted:#8890a8; --card:#171a27; --line:#262a3d;
+    --hero1:#7c5cff; --hero2:#4fd1c5 }
+
+  .view{position:absolute;inset:0 0 64px 0;overflow-y:auto;overflow-x:hidden;display:none}
+  .view.on{display:block}
+  .view::-webkit-scrollbar{width:0}
+
+  .top{padding:32px 18px 6px}
+  .top h3{font-size:24px;font-weight:900;letter-spacing:-.7px;line-height:1.06;margin:0}
+  .top .sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .secttl{font-size:17px;font-weight:900;padding:16px 18px 2px}
+
+  .pills{display:flex;gap:7px;overflow-x:auto;padding:10px 18px}
+  .pills::-webkit-scrollbar{height:0}
+  .pill{flex:none;font-size:12px;font-weight:700;padding:7px 14px;border-radius:30px;background:var(--accent-soft);color:var(--accent-soft-ink)}
+  .pill.on{background:var(--accent);color:var(--accent-ink)}
+
+  .feed{padding:4px 18px 24px;display:flex;flex-direction:column;gap:20px}
+  .tile{border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.12);background:var(--card)}
+  .hero{height:116px;position:relative;display:flex;align-items:flex-end;padding:12px;color:#fff;
+    background:linear-gradient(135deg,var(--hero1),var(--hero2))}
+
+  /* Tema "Original" (magazine): cada tile con su propio degradado de color. */
+  .screen[data-theme="magazine"] .hero.hc1{background:linear-gradient(135deg,#f857a6,#ff5858)}
+  .screen[data-theme="magazine"] .hero.hc2{background:linear-gradient(135deg,#4e65ff,#92effd)}
+  .screen[data-theme="magazine"] .hero.hc3{background:linear-gradient(135deg,#f6d365,#fda085)}
+  .screen[data-theme="magazine"] .hero.hc4{background:linear-gradient(135deg,#30cfd0,#330867)}
+  .screen[data-theme="magazine"] .hero.hc5{background:linear-gradient(135deg,#a18cd1,#fbc2eb)}
+  .hero .cat{position:absolute;top:12px;left:12px;font-size:10px;font-weight:900;text-transform:uppercase;
+    letter-spacing:.5px;background:rgba(0,0,0,.35);padding:4px 10px;border-radius:20px}
+  .hero .emoji{font-size:48px;position:absolute;right:14px;top:50%;transform:translateY(-50%);opacity:.92}
+  .hero h4{margin:0;font-size:18px;font-weight:900;line-height:1.1;text-shadow:0 1px 6px rgba(0,0,0,.45);z-index:2;max-width:66%}
+  .tilefav{position:absolute;top:10px;right:10px;z-index:3;background:rgba(0,0,0,.35);border:0;
+    color:#fff;font-size:18px;width:34px;height:34px;border-radius:50%;cursor:pointer;line-height:1}
+  .tilefav.on{color:#ffd84d}
+  .cardbody{padding:13px 14px}
+  .cardbody .m{font-size:12px;color:var(--muted);margin:0 0 9px}
+  .cardbody .r{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+  .cardbody .t{font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent-soft-ink)}
+  .cardbody .t.free{background:#eafaf0;color:#167a43}
+  .cardbody .btns{display:flex;gap:7px}
+  .cardbody .btns a{flex:1;text-align:center;font-size:12px;font-weight:800;padding:10px;border-radius:10px;text-decoration:none;cursor:pointer}
+  .cardbody .btns a.p{background:var(--accent);color:var(--accent-ink)}
+  .cardbody .btns a.g{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+  /* MAP */
+  .mapcanvas{position:absolute;inset:0;overflow:hidden;
+    background:linear-gradient(0deg, rgba(0,0,0,.04) 1px, transparent 1px) 0 0/100% 34px,
+      linear-gradient(90deg, rgba(0,0,0,.04) 1px, transparent 1px) 0 0/34px 100%, #e8eef0;}
+  .mapcanvas .river{position:absolute;left:-10%;top:34%;width:130%;height:40px;background:#bcd6e6;transform:rotate(-8deg);opacity:.8;border-radius:40px}
+  .pin{position:absolute;transform:translate(-50%,-100%);font-size:12px;font-weight:800;cursor:pointer;
+    background:var(--accent);color:var(--accent-ink);padding:4px 9px 5px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap}
+  .pin::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--accent)}
+  .pin.free{background:#167a43}.pin.free::after{border-top-color:#167a43}
+  .mapcard{position:absolute;left:12px;right:12px;bottom:12px;background:var(--card);border-radius:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.22);padding:13px 14px}
+  .mapcard .head{display:flex;gap:11px;align-items:flex-start}
+  .mapcard .em{font-size:30px;line-height:1}
+  .mapcard .mc{flex:1;min-width:0}
+  .mapcard h4{margin:0 0 3px;font-size:14px;line-height:1.2}
+  .mapcard .mm{font-size:11px;color:var(--muted)}
+  .mapcard .fav{background:none;border:0;font-size:20px;color:#d9b400;cursor:pointer;line-height:1;padding:0 2px}
+  .mapcard .fav.on{color:#f5b800}
+  .mapcard .close{background:none;border:0;font-size:18px;color:var(--muted);cursor:pointer;line-height:1;padding:0 2px}
+  .mapcard .r{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0 10px}
+  .mapcard .t{font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent-soft-ink)}
+  .mapcard .t.free{background:#eafaf0;color:#167a43}
+  .mapcard .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .mapcard .btns a{flex:1;min-width:0;text-align:center;font-size:11.5px;font-weight:800;padding:9px 6px;border-radius:9px;text-decoration:none;white-space:nowrap;cursor:pointer}
+  .mapcard .btns a.p{flex-basis:100%;background:var(--accent);color:var(--accent-ink)}
+  .mapcard .btns a.g{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+  /* SEARCH */
+  .search{padding:8px 18px 20px}
+  .fld{margin:12px 0}
+  .fld label{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
+  .fld input,.fld select{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:14px;font-family:inherit;background:var(--card);color:var(--ink)}
+  .go{width:100%;border:0;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:14px;padding:13px;border-radius:12px;margin-top:6px;cursor:pointer}
+
+  /* SETTINGS */
+  .settings{padding:8px 18px 24px}
+  .settings .lbl{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:18px 0 10px}
+  .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .sw{border:2px solid var(--line);border-radius:14px;padding:12px 10px;cursor:pointer;background:var(--card);text-align:center}
+  .sw.on{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+  .sw .dot{width:40px;height:40px;border-radius:50%;margin:0 auto 8px}
+  .sw .nm{font-size:11px;font-weight:800;color:var(--ink)}
+  .toggle{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+    border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;margin-top:10px;font-size:13px;font-weight:700}
+
+  .empty{padding:70px 24px;text-align:center;color:var(--muted)}
+  .empty .big{font-size:46px;margin-bottom:10px}
+
+  /* ===== Bottom nav (5 items) ===== */
+  .nav{position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--card);border-top:1px solid var(--line);
+    display:flex;z-index:50}
+  .nav button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;font-size:9.5px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;position:relative}
+  .nav button .ic{font-size:20px;line-height:1;opacity:.6;transition:.15s}
+  .nav button.on{color:var(--accent)}
+  .nav button.on .ic{opacity:1;transform:translateY(-1px)}
+  .nav button .badge{position:absolute;top:7px;right:22px;background:#ff3b6b;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>Magazine + barra inferior + Ajustes (temas de color)</h1>
+  <p>Ahora hay una sección <b>⚙️ Ajustes</b> con selector de <b>tema de color para toda la app</b>. Elige una paleta y mira cómo
+     cambian cabecera, botones, pines del mapa, chips y acentos al instante. También hay un interruptor de modo oscuro.
+     En la app real el tema se guardará (localStorage) y se aplicará siempre.</p>
+</div>
+
+<div class="wrapc">
+  <div class="phone"><div class="screen" id="screen" data-theme="magazine"></div></div>
+</div>
+
+<script>
+const DATA = [
+  {t:"Cuentacuentos: El bosque mágico", time:"11:00", venue:"Biblioteca Retiro · Retiro", cat:"Cuentos", emoji:"🧸", free:true,  age:"3–6", x:58, y:48},
+  {t:"Taller de circo para peques",     time:"17:30", venue:"C.C. Galileo · Chamberí",    cat:"Circo",  emoji:"🎪", free:false, age:"5–10",x:40, y:30},
+  {t:"Teatro familiar: Pulgarcito",     time:"12:00", venue:"Fernán Gómez · Centro",      cat:"Teatro", emoji:"🎭", free:false, age:"4+",  x:50, y:60},
+  {t:"Concierto para bebés",            time:"18:00", venue:"CentroCentro · Centro",      cat:"Música", emoji:"🎵", free:true,  age:"0–3", x:66, y:66},
+  {t:"Pintura en familia",              time:"18:30", venue:"Matadero · Arganzuela",      cat:"Talleres",emoji:"🎨",free:true,  age:"todas",x:34, y:74},
+];
+const THEMES = [
+  ["magazine","Original","linear-gradient(135deg,#f857a6,#ff5858)"],
+  ["grape","Uva","linear-gradient(135deg,#9b3fb0,#7b2d8e)"],
+  ["ocean","Océano","linear-gradient(135deg,#06b6d4,#2563eb)"],
+  ["sunset","Atardecer","linear-gradient(135deg,#fb7185,#f97316)"],
+  ["forest","Bosque","linear-gradient(135deg,#34d399,#059669)"],
+  ["candy","Chuche","linear-gradient(135deg,#f472b6,#a855f7)"],
+  ["dark","Oscuro","linear-gradient(135deg,#7c5cff,#4fd1c5)"],
+];
+
+const FAVS = new Set();
+
+function tiles(){
+  return DATA.map((it,i)=>`
+    <div class="tile"><div class="hero hc${(i%5)+1}">
+      <span class="cat">${it.cat}</span><span class="emoji">${it.emoji}</span><h4>${it.t}</h4>
+      <button class="tilefav" data-i="${i}" title="Favorito">☆</button></div>
+      <div class="cardbody"><div class="m">🕐 ${it.time} · 📍 ${it.venue}</div>
+      <div class="r"><span class="t ${it.free?'free':''}">${it.free?'gratis':'de pago'}</span>
+        <span class="t">${it.age} años</span></div>
+      <div class="btns"><a class="g">🧭 Cómo llegar</a><a class="p">Detalles</a></div></div></div>`).join("");
+}
+function pins(){
+  return DATA.map((it,i)=>`<span class="pin ${it.free?'free':''}" data-i="${i}" style="left:${it.x}%;top:${it.y}%">${it.emoji} ${it.time}</span>`).join("");
+}
+function swatches(cur){
+  return THEMES.map(([id,nm,grad])=>`
+    <div class="sw ${id===cur?'on':''}" data-theme="${id}">
+      <div class="dot" style="background:${grad}"></div><div class="nm">${nm}</div></div>`).join("");
+}
+
+const screen = document.getElementById("screen");
+function render(){
+  const theme = screen.dataset.theme;
+  screen.innerHTML = `
+    <div class="view on" id="v-home">
+      <div class="top"><h3>Qué hacer<br/>con los peques</h3><div class="sub">Madrid · esta semana</div></div>
+      <div class="pills"><span class="pill on">Todo</span><span class="pill">Cuentos</span>
+        <span class="pill">Teatro</span><span class="pill">Música</span><span class="pill">Circo</span></div>
+      <div class="feed">${tiles()}</div>
+    </div>
+
+    <div class="view" id="v-map">
+      <div class="mapcanvas"><div class="river"></div>${pins()}<div class="mapcard" id="mapcard"></div></div>
+    </div>
+
+    <div class="view" id="v-fav"><div class="secttl">★ Favoritos</div>
+      <div class="empty"><div class="big">★</div>Aún no has guardado nada.<br/>Toca la estrella en una tarjeta o en el mapa.</div></div>
+
+    <div class="view" id="v-search">
+      <div class="secttl">🔍 Buscar</div>
+      <div class="search">
+        <div class="fld"><label>Edad</label><input value="3"/></div>
+        <div class="fld"><label>Periodo</label><select><option>3 semanas</option></select></div>
+        <div class="fld"><label>Distrito</label><select><option>Todos los distritos</option></select></div>
+        <div class="fld"><label>Texto</label><input placeholder="títeres, música…"/></div>
+        <button class="go">Buscar actividades 🔎</button>
+      </div>
+    </div>
+
+    <div class="view" id="v-settings">
+      <div class="secttl">⚙️ Ajustes</div>
+      <div class="settings">
+        <div class="lbl">Tema de color</div>
+        <div class="swatches">${swatches(theme)}</div>
+        <div class="lbl">Apariencia</div>
+        <div class="toggle"><span>🌙 Modo oscuro</span><span>${theme==='dark'?'Activado':'Desactivado'}</span></div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="on" data-v="home"><span class="ic">🏠</span>Inicio</button>
+      <button data-v="map"><span class="ic">🗺️</span>Mapa</button>
+      <button data-v="fav"><span class="ic">★</span>Favoritos</button>
+      <button data-v="search"><span class="ic">🔍</span>Buscar</button>
+      <button data-v="settings"><span class="ic">⚙️</span>Ajustes</button>
+    </div>`;
+  wire();
+}
+
+let currentView = "home";
+function wire(){
+  // restore active view
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="v-"+currentView));
+  const navs=[...screen.querySelectorAll(".nav button")];
+  navs.forEach(b=>{
+    b.classList.toggle("on", b.dataset.v===currentView);
+    b.onclick=()=>{
+      currentView=b.dataset.v;
+      navs.forEach(x=>x.classList.remove("on")); b.classList.add("on");
+      document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+      document.getElementById("v-"+currentView).classList.add("on");
+      if(currentView==="fav") renderFavs();
+    };
+  });
+  // theme swatches
+  screen.querySelectorAll(".sw").forEach(s=>{
+    s.onclick=()=>{ screen.dataset.theme=s.dataset.theme; render(); };
+  });
+  // map popup
+  screen.querySelectorAll(".pin").forEach(p=>p.onclick=()=>showPopup(parseInt(p.dataset.i,10)));
+  const mc=document.getElementById("mapcard");
+  if(mc){ mc.addEventListener("click",e=>{
+    if(e.target.classList.contains("close")){ mc.innerHTML=""; return; }
+    if(e.target.classList.contains("fav")){ const i=+e.target.dataset.i;
+      FAVS.has(i)?FAVS.delete(i):FAVS.add(i); showPopup(i); updateBadge(); }
+  }); showPopup(0); }
+  // tile stars
+  syncStars(); updateBadge();
+  screen.querySelectorAll(".tilefav").forEach(s=>s.onclick=()=>{
+    const i=+s.dataset.i; FAVS.has(i)?FAVS.delete(i):FAVS.add(i); syncStars(); updateBadge();
+  });
+}
+function showPopup(i){
+  const mc=document.getElementById("mapcard"); if(!mc) return;
+  const it=DATA[i], f=FAVS.has(i);
+  mc.innerHTML=`<div class="head"><span class="em">${it.emoji}</span>
+    <div class="mc"><h4>${it.t}</h4><div class="mm">🕐 ${it.time} · 📍 ${it.venue}</div></div>
+    <button class="fav ${f?'on':''}" data-i="${i}">${f?'★':'☆'}</button>
+    <button class="close">✕</button></div>
+    <div class="r"><span class="t">${it.cat}</span>
+      <span class="t ${it.free?'free':''}">${it.free?'gratis':'de pago'}</span><span class="t">${it.age} años</span></div>
+    <div class="btns"><a class="g">🔗 Compartir</a><a class="g">🧭 Cómo llegar</a><a class="p">Ver detalles</a></div>`;
+}
+function syncStars(){
+  screen.querySelectorAll(".tilefav").forEach(s=>{ const on=FAVS.has(+s.dataset.i);
+    s.classList.toggle("on",on); s.textContent=on?"★":"☆"; });
+}
+function updateBadge(){
+  const b=screen.querySelector('.nav button[data-v="fav"]'); if(!b) return;
+  let bd=b.querySelector(".badge");
+  if(FAVS.size){ if(!bd){bd=document.createElement("span");bd.className="badge";b.appendChild(bd);} bd.textContent=FAVS.size; }
+  else if(bd){ bd.remove(); }
+}
+function renderFavs(){
+  const host=document.getElementById("v-fav");
+  if(!FAVS.size){ host.innerHTML=`<div class="secttl">★ Favoritos</div>
+    <div class="empty"><div class="big">★</div>Aún no has guardado nada.<br/>Toca la estrella en una tarjeta o en el mapa.</div>`; return; }
+  let cards=""; [...FAVS].forEach(i=>{ const it=DATA[i];
+    cards+=`<div class="tile"><div class="hero hc${(i%5)+1}"><span class="cat">${it.cat}</span>
+      <span class="emoji">${it.emoji}</span><h4>${it.t}</h4></div>
+      <div class="cardbody"><div class="m">🕐 ${it.time} · 📍 ${it.venue}</div>
+      <div class="btns"><a class="g">🧭 Cómo llegar</a><a class="p">Detalles</a></div></div></div>`; });
+  host.innerHTML=`<div class="secttl">★ Favoritos (${FAVS.size})</div><div class="feed">${cards}</div>`;
+}
+
+render();
+</script>
+</body>
+</html>
