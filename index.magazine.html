@@ -86,16 +86,11 @@
   .cardbody .btns a.p{background:var(--accent);color:var(--accent-ink)}
   .cardbody .btns a.g{background:var(--accent-soft);color:var(--accent-soft-ink)}
 
-  /* MAP (placeholder in Fase 1; real Leaflet in Fase 3) */
-  .mapcanvas{position:absolute;inset:0;overflow:hidden;
-    background:linear-gradient(0deg, rgba(0,0,0,.04) 1px, transparent 1px) 0 0/100% 34px,
-      linear-gradient(90deg, rgba(0,0,0,.04) 1px, transparent 1px) 0 0/34px 100%, #e8eef0;}
-  .mapcanvas .river{position:absolute;left:-10%;top:34%;width:130%;height:40px;background:#bcd6e6;transform:rotate(-8deg);opacity:.8;border-radius:40px}
-  .pin{position:absolute;transform:translate(-50%,-100%);font-size:12px;font-weight:800;cursor:pointer;
-    background:var(--accent);color:var(--accent-ink);padding:4px 9px 5px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap}
-  .pin::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--accent)}
-  .pin.free{background:#167a43}.pin.free::after{border-top-color:#167a43}
-  .mapcard{position:absolute;left:12px;right:12px;bottom:12px;background:var(--card);border-radius:16px;
+  /* MAP (real Leaflet) */
+  #map{position:absolute;inset:0;background:#e8eef0}
+  .maploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:14px;font-weight:600;background:var(--accent-soft)}
+  .mapcard{position:absolute;left:12px;right:12px;bottom:12px;z-index:500;background:var(--card);border-radius:16px;
     box-shadow:0 10px 30px rgba(0,0,0,.22);padding:13px 14px}
   .mapcard .head{display:flex;gap:11px;align-items:flex-start}
   .mapcard .em{font-size:30px;line-height:1}
@@ -388,22 +383,59 @@ function renderFavs(){
   wireFeed(host);
 }
 
-// ---- Map view (placeholder; real Leaflet in Fase 3) ----
-function renderMapPins(){
-  const canvas=document.getElementById("mapcanvas");
-  if(!canvas || !lastResult) return;
-  const withGeo=lastResult.activities.filter(a=>a.lat&&a.lon).slice(0,30);
-  // crude projection of Madrid lat/lon into the box, just for the placeholder
-  const latMin=40.33,latMax=40.52,lonMin=-3.80,lonMax=-3.60;
-  const pins=withGeo.map(a=>{
-    const x=((a.lon-lonMin)/(lonMax-lonMin))*100;
-    const y=(1-(a.lat-latMin)/(latMax-latMin))*100;
-    return `<span class="pin ${a.free?'free':''}" data-fav="${esc(favId(a))}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%">${catEmoji(a)} ${esc(a.time||"")}</span>`;
-  }).join("");
-  canvas.querySelectorAll(".pin").forEach(p=>p.remove());
-  canvas.insertAdjacentHTML("afterbegin", pins);
-  canvas.querySelectorAll(".pin").forEach(p=> p.onclick=()=>showPopup(p.dataset.fav));
+// ---- Map view (real Leaflet) ----
+let _map=null, _markers=[], _leafletP=null, _mapById={};
+function loadLeaflet(){
+  if(window.L) return Promise.resolve();
+  if(_leafletP) return _leafletP;
+  _leafletP=new Promise((resolve,reject)=>{
+    const css=document.createElement("link");
+    css.rel="stylesheet"; css.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    css.integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="; css.crossOrigin="";
+    document.head.appendChild(css);
+    const js=document.createElement("script");
+    js.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    js.integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="; js.crossOrigin="";
+    js.onload=()=>resolve(); js.onerror=()=>reject(new Error("No se pudo cargar el mapa"));
+    document.head.appendChild(js);
+  });
+  return _leafletP;
+}
+function ensureMap(){
+  if(_map) return;
+  _map=L.map("map",{scrollWheelZoom:false}).setView([40.4168,-3.7038],12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(_map);
+}
+function clearMarkers(){ if(_map) _markers.forEach(m=>_map.removeLayer(m)); _markers=[]; _mapById={}; }
+async function renderMapPins(){
+  const host=document.getElementById("v-map");
+  if(!lastResult) return;
+  try{
+    await loadLeaflet();
+  }catch(e){
+    const ml=document.getElementById("maploading"); if(ml) ml.textContent="No se pudo cargar el mapa.";
+    return;
+  }
+  const ml=document.getElementById("maploading"); if(ml) ml.remove();
+  ensureMap();
+  clearMarkers();
+  const withGeo=lastResult.activities.filter(a=>a.lat&&a.lon);
+  withGeo.forEach(a=>{
+    const id=favId(a);
+    const m=L.marker([a.lat,a.lon]).addTo(_map);
+    m.on("click",()=>{ showPopup(id); });
+    _markers.push(m); _mapById[id]=m;
+  });
+  // Fit to markers.
+  if(_markers.length){
+    const b=_markers.map(m=>m.getLatLng());
+    _map.fitBounds(b,{padding:[40,40],maxZoom:14});
+  }
+  // Make sure Leaflet lays out correctly after the view becomes visible.
+  setTimeout(()=>{ if(_map) _map.invalidateSize(); },60);
+  // Open the first activity in the bottom card.
   if(withGeo.length) showPopup(favId(withGeo[0]));
+  else { const mc=document.getElementById("mapcard"); if(mc) mc.innerHTML=""; }
 }
 function showPopup(id){
   const mc=document.getElementById("mapcard"); if(!mc) return;
@@ -420,7 +452,11 @@ function showPopup(id){
       <a class="g" href="${dirLink(a)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>
       ${a.link?`<a class="p" href="${esc(a.link)}" target="_blank" rel="noopener">Ver detalles</a>`:""}</div>`;
   mc.querySelector("[data-share]")?.addEventListener("click",(e)=>{e.preventDefault();shareActivity(a);});
+  // Pan the map to the chosen marker.
+  const mk=_mapById[id];
+  if(_map && mk){ _map.panTo(mk.getLatLng()); }
 }
+
 
 function swatches(cur){
   return THEMES.map(([id,nm,grad])=>`
@@ -493,7 +529,8 @@ function render(){
     </div>
 
     <div class="view" id="v-map">
-      <div class="mapcanvas" id="mapcanvas"><div class="river"></div><div class="mapcard" id="mapcard"></div></div>
+      <div id="map"><div class="maploading" id="maploading">Cargando mapa…</div></div>
+      <div class="mapcard" id="mapcard"></div>
     </div>
 
     <div class="view" id="v-fav"></div>
@@ -529,6 +566,8 @@ function render(){
     </div>`;
   wireShell();
   updateBadge();
+  // The #map node was recreated by innerHTML; drop any stale Leaflet instance.
+  _map=null; _markers=[]; _mapById={};
   showView(currentView);
 }
 
@@ -552,7 +591,7 @@ function wireShell(){
   if(mc) mc.addEventListener("click",e=>{
     if(e.target.classList.contains("close")){ mc.innerHTML=""; return; }
     if(e.target.classList.contains("fav")){ const id=e.target.dataset.fav;
-      const a=actById(id); if(a){ toggleFavObj(a); showPopup(id); renderMapPins(); } }
+      const a=actById(id); if(a){ toggleFavObj(a); showPopup(id); } }
   });
   const go=document.getElementById("go");
   if(go) go.onclick=runSearch;
