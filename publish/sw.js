@@ -5,16 +5,31 @@
  *  - Map tiles                 : cache a limited set, network-first fallback to cache
  *  - /api/search               : never cached (always live data)
  */
-const SHELL = "mk-shell-v1";
+const SHELL = "mk-shell-v2";
 const CDN   = "mk-cdn-v1";
 const TILES = "mk-tiles-v1";
 
 // Shell URL = the scope this SW is registered under (works at "/" or "/subpath/").
 const SHELL_URL = new URL("./", self.registration ? self.registration.scope : self.location).pathname;
 
+// All local files the app needs to boot. Pre-caching these means that after one
+// successful load the app runs even if the host (e.g. GitHub Pages) goes away.
+const SHELL_ASSETS = [
+  SHELL_URL,
+  SHELL_URL + "index.html",
+  SHELL_URL + "engine.js",
+  SHELL_URL + "api-shim.js",
+  SHELL_URL + "manifest.webmanifest",
+];
+
 self.addEventListener("install", (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(SHELL).then(c => c.addAll([SHELL_URL])));
+  // Cache each asset independently so one failure does not abort the whole install.
+  e.waitUntil(caches.open(SHELL).then(c =>
+    Promise.all(SHELL_ASSETS.map(u =>
+      c.add(new Request(u, { cache: "reload" })).catch(() => {})
+    ))
+  ));
 });
 
 self.addEventListener("activate", (e) => {
@@ -43,6 +58,24 @@ self.addEventListener("fetch", (e) => {
       const cached = await cache.match(SHELL_URL);
       const fetchP = fetch(req).then(r => { cache.put(SHELL_URL, r.clone()); return r; }).catch(()=>null);
       return cached || (await fetchP) || new Response("offline", {status:503});
+    })());
+    return;
+  }
+
+  // Other local app files (engine.js, api-shim.js, manifest): cache-first,
+  // so the app keeps working even if the host is taken offline later.
+  if (url.origin === self.location.origin && SHELL_ASSETS.indexOf(url.pathname) !== -1) {
+    e.respondWith((async () => {
+      const cache = await caches.open(SHELL);
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      try {
+        const r = await fetch(req);
+        if (r.ok) cache.put(req, r.clone());
+        return r;
+      } catch (_) {
+        return cached || new Response("offline", { status: 503 });
+      }
     })());
     return;
   }
