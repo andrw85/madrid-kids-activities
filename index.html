@@ -582,33 +582,31 @@ function render(){
 
     <div class="view" id="v-fav"></div>
 
-    <div class="view" id="v-search">
-      <div class="secttl">🔍 Buscar</div>
-      <div class="search">
-        <div class="fld"><label>Edad</label><input id="age" type="number" value="3" min="0" max="17" inputmode="numeric"/></div>
-        <div class="fld"><label>Periodo</label><select id="weeks">
-          <option value="1">Esta semana</option><option value="2">2 semanas</option>
-          <option value="3" selected>3 semanas</option><option value="4">4 semanas</option><option value="6">6 semanas</option></select></div>
-        <div class="fld"><label>Distrito</label><select id="district"><option value="">Todos los distritos</option></select></div>
-        <div class="fld"><label>Texto</label><input id="query" placeholder="títeres, música…"/></div>
-        <div class="fld"><label>Tipo de actividad</label><div class="cats" id="searchcats">${searchCats()}</div></div>
-        <label class="chk"><input id="free_only" type="checkbox"/> Solo gratis</label>
-        <label class="chk"><input id="strict_age" type="checkbox"/> Edad exacta</label>
-        <button class="go" id="go">Buscar actividades 🔎</button>
-        <button class="clearbtn" id="clearBtn">Limpiar filtros</button>
-      </div>
-    </div>
-
     <div class="view" id="v-settings">
       <div class="secttl">⚙️ Ajustes</div>
-      <div class="settings"><div class="lbl">Tema de color</div><div class="swatches">${swatches(theme)}</div></div>
+      <div class="settings">
+        <div class="lbl">🔍 Búsqueda</div>
+        <div class="search" style="padding:0">
+          <div class="fld"><label>Edad</label><input id="age" type="number" value="3" min="0" max="17" inputmode="numeric"/></div>
+          <div class="fld"><label>Periodo</label><select id="weeks">
+            <option value="1">Esta semana</option><option value="2">2 semanas</option>
+            <option value="3" selected>3 semanas</option><option value="4">4 semanas</option><option value="6">6 semanas</option></select></div>
+          <div class="fld"><label>Distrito</label><select id="district"><option value="">Todos los distritos</option></select></div>
+          <div class="fld"><label>Texto</label><input id="query" placeholder="títeres, música…"/></div>
+          <div class="fld"><label>Tipo de actividad</label><div class="cats" id="searchcats">${searchCats()}</div></div>
+          <label class="chk"><input id="free_only" type="checkbox"/> Solo gratis</label>
+          <label class="chk"><input id="strict_age" type="checkbox"/> Edad exacta</label>
+          <button class="go" id="go">Buscar actividades 🔎</button>
+          <button class="clearbtn" id="clearBtn">Limpiar filtros</button>
+        </div>
+        <div class="lbl">Tema de color</div><div class="swatches">${swatches(theme)}</div>
+      </div>
     </div>
 
     <div class="nav">
       <button data-v="home"><span class="ic">🏠</span>Inicio</button>
       <button data-v="map"><span class="ic">🗺️</span>Mapa</button>
       <button data-v="fav"><span class="ic">★</span>Favoritos</button>
-      <button data-v="search"><span class="ic">🔍</span>Buscar</button>
       <button data-v="settings"><span class="ic">⚙️</span>Ajustes</button>
     </div>`;
   wireShell();
