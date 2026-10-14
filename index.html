@@ -422,20 +422,50 @@ function parseFichaImage(html){
   return src;
 }
 // Openverse keyword fallback (free, no key, works in browser + native).
+// Several queries per category so cards don't all share one image.
 const CAT_QUERY = {
-  "CuentacuentosTiteresMarionetas":"puppet show children","TeatroPerformance":"children theatre stage",
-  "CircoMagia":"circus performance","CursosTalleres":"kids craft workshop","Musica":"children orchestra concert",
-  "DanzaBaile":"children dance","CineActividadesAudiovisuales":"children cinema","ExcursionesItinerariosVisitas":"family museum visit",
-  "ClubesLectura":"children reading books","ActividadesCalleArteUrbano":"street art mural","Fiestas":"children festival party"
+  "CuentacuentosTiteresMarionetas":["puppet show kids","marionette theatre","storytelling children"],
+  "TeatroPerformance":["children theatre stage","kids drama play","school play performance"],
+  "CircoMagia":["kids circus colorful","juggling performer","magic show children"],
+  "CursosTalleres":["kids craft workshop","children painting art","hands on kids workshop"],
+  "Musica":["children concert","kids playing instruments","youth orchestra"],
+  "DanzaBaile":["children dance class","kids ballet","dance performance kids"],
+  "CineActividadesAudiovisuales":["kids cinema fun","children watching film","animation kids"],
+  "ExcursionesItinerariosVisitas":["family museum visit","children exploring park","kids outdoor tour"],
+  "ClubesLectura":["children reading books","kids library","picture books kids"],
+  "ActividadesCalleArteUrbano":["colorful street art","kids mural painting","urban art bright"],
+  "Fiestas":["children party colorful","kids festival fun","balloons celebration kids"]
 };
+// Reject obviously wrong / creepy / adult / dull results by title+tags.
+const IMG_BAD = /\b(horror|scary|death|dead|grave|cemetery|funeral|blood|war|weapon|gun|nude|naked|erotic|sexy|lingerie|bed|bedroom|hospital|sick|cry|sad|dark|ghost|skull|zombie|protest|smoke|cigarette|alcohol|drug)\b/i;
+// Prefer real color photos from decent providers.
+const IMG_GOOD_SRC = { flickr:1, wikimedia:1, rawpixel:1, stocksnap:1, nappy:1 };
+// Deterministic index from an activity id, so each card keeps a stable pick.
+function hashIdx(id, n){
+  let h = 0; const s = String(id);
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i))|0; }
+  return n>0 ? (Math.abs(h) % n) : 0;
+}
 async function openverseImage(a){
-  const q = CAT_QUERY[a.category] || "children activity madrid";
+  const list = CAT_QUERY[a.category] || ["children activity colorful"];
+  const q = list[hashIdx(favId(a), list.length)];
   try{
-    const r = await fetch("https://api.openverse.org/v1/images/?q="+encodeURIComponent(q)+"&page_size=1&mature=false",
-      { headers:{ Accept:"application/json" } });
+    const url = "https://api.openverse.org/v1/images/?q="+encodeURIComponent(q)
+      + "&page_size=20&mature=false&category=photograph&aspect_ratio=wide";
+    const r = await fetch(url, { headers:{ Accept:"application/json" } });
     if(!r.ok) return null;
     const j = await r.json();
-    const hit = j.results && j.results[0];
+    let hits = (j.results||[]).filter(h => {
+      if(!(h.thumbnail || h.url)) return false;
+      const txt = (h.title||"") + " " + ((h.tags||[]).map(t=>t.name||t).join(" "));
+      return !IMG_BAD.test(txt);
+    });
+    if(!hits.length) return null;
+    // Bias toward good providers, else keep all.
+    const good = hits.filter(h => IMG_GOOD_SRC[(h.source||"").toLowerCase()]);
+    const pool = good.length ? good : hits;
+    // Deterministic pick keyed on the activity id -> stable, varied across cards.
+    const hit = pool[hashIdx(favId(a)+"|img", pool.length)];
     return hit && (hit.thumbnail || hit.url) || null;
   }catch(_){ return null; }
 }
