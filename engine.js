@@ -71,18 +71,24 @@
   }
 
   const KID_CATEGORIES = {
-    CuentacuentosTiteresMarionetas: "Cuentacuentos / Titeres",
+    CuentacuentosTiteresMarionetas: "Cuentacuentos",
     TeatroPerformance: "Teatro",
     CursosTalleres: "Talleres",
-    CircoMagia: "Circo / Magia",
+    CircoMagia: "Circo",
     CineActividadesAudiovisuales: "Cine",
-    Musica: "Musica",
+    Musica: "Música",
     DanzaBaile: "Danza",
-    ExcursionesItinerariosVisitas: "Visitas / Itinerarios",
-    ClubesLectura: "Club de lectura",
-    ActividadesCalleArteUrbano: "Calle / Arte urbano",
+    ExcursionesItinerariosVisitas: "Visitas",
+    ClubesLectura: "Lectura",
+    ActividadesCalleArteUrbano: "Arte urbano",
     Fiestas: "Fiestas",
   };
+  // Turn an unknown CamelCase @type tail into readable words, so the card
+  // label never shows a long glued string like "ExcursionesItinerariosVisitas".
+  function prettyCat(cat) {
+    if (!cat) return "Actividad";
+    return String(cat).replace(/([a-z\u00e0-\u00ff])([A-Z])/g, "$1 $2").trim();
+  }
   const STRONG_KW = [
     "titere", "marioneta", "cuentacuento", "cuenta cuento", "teatro infantil",
     "taller infantil", "publico infantil", "para ninos", "para ninas",
@@ -260,7 +266,7 @@
       const ll = latlon(ev);
       out.push({
         id: ev.id, title: title.trim(), description: (desc || "").trim().slice(0, 600),
-        category: cat, category_label: KID_CATEGORIES[cat] || cat, audience: aud,
+        category: cat, category_label: KID_CATEGORIES[cat] || prettyCat(cat), audience: aud,
         age_range: rng, age_known: rng !== null, age_match: match, standing: standing,
         score: relevance(cat, aud, title, desc, rng !== null, match, standing),
         free: isFree, price: (ev.price || "").trim(), time: (ev.time || "").trim(),
