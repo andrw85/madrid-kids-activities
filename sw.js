@@ -5,7 +5,7 @@
  *  - Map tiles                 : cache a limited set, network-first fallback to cache
  *  - /api/search               : never cached (always live data)
  */
-const SHELL = "mk-shell-v2";
+const SHELL = "mk-shell-v3";
 const CDN   = "mk-cdn-v1";
 const TILES = "mk-tiles-v1";
 
@@ -52,14 +52,29 @@ self.addEventListener("fetch", (e) => {
   // Never cache the API.
   if (url.pathname.indexOf("/api/") !== -1) return;
 
-  // App shell: stale-while-revalidate.
-  if (url.origin === self.location.origin &&
-      (url.pathname === SHELL_URL || url.pathname === SHELL_URL + "index")) {
+  // App shell: serve the cached shell first (offline-first), refresh in the
+  // background. Treat navigations (and the shell/index paths) the same so the
+  // app always boots even when the host (GitHub Pages) 404s or is offline.
+  const isNavigation = req.mode === "navigate";
+  const isShellPath = url.origin === self.location.origin &&
+      (url.pathname === SHELL_URL || url.pathname === SHELL_URL + "index" ||
+       url.pathname === SHELL_URL + "index.html");
+  if (isNavigation || isShellPath) {
     e.respondWith((async () => {
       const cache = await caches.open(SHELL);
       const cached = await cache.match(SHELL_URL);
-      const fetchP = fetch(req).then(r => { cache.put(SHELL_URL, r.clone()); return r; }).catch(()=>null);
-      return cached || (await fetchP) || new Response("offline", {status:503});
+      // Background refresh — but ONLY overwrite the cached shell with a real,
+      // OK (200) response. A 404/offline from GitHub must never poison it.
+      const fetchP = fetch(req).then(r => {
+        if (r && r.ok && r.type !== "opaqueredirect") cache.put(SHELL_URL, r.clone());
+        return r;
+      }).catch(() => null);
+      // Prefer the cached shell. Fall back to the network only if nothing is
+      // cached yet, and only use a network response that is actually OK.
+      if (cached) { fetchP; return cached; }
+      const net = await fetchP;
+      if (net && net.ok) return net;
+      return new Response("offline", { status: 503 });
     })());
     return;
   }
