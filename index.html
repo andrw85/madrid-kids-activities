@@ -155,6 +155,9 @@
   #v-home.deckmode .top{display:flex;align-items:center;justify-content:space-between}
   .dcount{flex:none;font-size:12px;font-weight:800;color:#9aa0b5;background:#171a27;border:1px solid #262a3d;padding:6px 12px;border-radius:20px}
   .dcount b{color:#fff}
+  /* quick-filter chips: dark style over the night background */
+  #v-home.deckmode .pill{background:#171a27;color:#c7cbe0;border:1px solid #262a3d}
+  #v-home.deckmode .pill.on{background:#7b2d8e;color:#fff;border-color:#7b2d8e}
   .deckwrap{flex:1;display:flex;flex-direction:column;min-height:0}
   .deck{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
     scroll-behavior:smooth;-webkit-overflow-scrolling:touch;min-height:0}
@@ -218,13 +221,13 @@
   details.standing summary::-webkit-details-marker{display:none}
   details.standing .feed{margin-top:12px;padding:0}
 
-  /* ===== Bottom nav ===== */
-  .nav{position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--card);border-top:1px solid var(--line);
+  /* ===== Bottom nav (fixed dark, matching the deck prototype) ===== */
+  .nav{position:absolute;left:0;right:0;bottom:0;height:64px;background:#171a27;border-top:1px solid #262a3d;
     display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
   .nav button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:3px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;position:relative}
+    gap:3px;font-size:10px;font-weight:700;color:#9aa0b5;cursor:pointer;font-family:inherit;position:relative}
   .nav button .ic{font-size:21px;line-height:1;opacity:.6;transition:.15s}
-  .nav button.on{color:var(--accent)}
+  .nav button.on{color:#c084e8}
   .nav button.on .ic{opacity:1;transform:translateY(-1px)}
   .nav button .badge{position:absolute;top:7px;right:calc(50% - 20px);background:#ff3b6b;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:10px}
 </style>
