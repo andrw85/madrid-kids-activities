@@ -526,6 +526,13 @@ async function applyHeroImage(a, heroEl){
     };
     im.src = url;
   };
+  // 0) official poster resolved by the backend (works on web + APK). Highest
+  //    priority: it is the real madrid.es image, so it wins over any older
+  //    keyword fallback that may be cached from a previous version.
+  if(a.image){
+    IMG_CACHE[id]={url:a.image,official:true}; saveImgCache();
+    show(a.image, true); return;
+  }
   // 1) cached result (re-validate non-official picks against the blocklist)
   const cached = IMG_CACHE[id];
   if(cached && cached.url){
@@ -533,7 +540,7 @@ async function applyHeroImage(a, heroEl){
     delete IMG_CACHE[id]; saveImgCache(); // bad cached pick -> drop and re-resolve
   } else if(cached && cached.none){ return; } // known: no image, keep gradient
 
-  // 2) official ficha image (native/APK only)
+  // 2) official ficha image (native/APK only; web is covered by step 0)
   if(a.link){
     const html = await nativeHttpGet(a.link);
     const ficha = parseFichaImage(html);
@@ -574,7 +581,7 @@ function deckCardHTML(a, dayLbl){
         <div class="dmeta">${a.time?`<span class="t">🕐 ${esc(a.time)}</span>`:""}${price}<span class="t">${esc(ageText(a))}</span></div>
         <div class="dwhere">📍 <b>${esc(a.venue||"")}</b>${dist}${a.address?`<br>${esc(a.address)}`:""}</div>
         ${desc?`<div class="ddesc"><span class="lbl">Sobre la actividad</span>${desc}</div>`:""}
-        <div class="dnote">📷 Las imágenes son orientativas y pueden no corresponder a la actividad real.</div>
+        ${a.image?"":`<div class="dnote">📷 Imagen orientativa; puede no corresponder a la actividad real.</div>`}
       </div>
       <div class="dacts">
         <a class="g" href="${dirLink(a)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>
@@ -700,7 +707,7 @@ function tileHTML(a){
     <div class="cardbody">
       <div class="m">${a.time?`🕐 ${esc(a.time)} · `:""}📍 ${esc(a.venue||"")}${dist}</div>
       <div class="r">${price}<span class="t">${esc(ageText(a))}</span></div>
-      <div class="tnote">📷 Imágenes orientativas; pueden no corresponder a la actividad real.</div>
+      ${a.image?"":`<div class="tnote">📷 Imagen orientativa; puede no corresponder a la actividad real.</div>`}
       <div class="btns">
         <a class="g" href="${dirLink(a)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>
         ${a.link?`<a class="p" href="${esc(a.link)}" target="_blank" rel="noopener">Detalles</a>`:`<a class="p" data-share="${esc(id)}">🔗 Compartir</a>`}

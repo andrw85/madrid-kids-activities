@@ -34,6 +34,7 @@ import re
 import sys
 import time
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
 try:
@@ -45,10 +46,15 @@ except Exception:  # fall back to plain requests if curl_cffi unavailable
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "cache", "agenda.json")
+IMG_CACHE = os.path.join(HERE, "cache", "images.json")  # link -> poster URL ("" = none)
 FEED_URL = ("https://datos.madrid.es/egob/catalogo/"
             "206974-0-agenda-eventos-culturales-100.json")
 UA = "madrid-kids-activities/1.0 (personal, non-commercial)"
 CACHE_TTL = 12 * 3600  # refetch at most twice a day; data updates daily
+# Image resolution limits (keep a search responsive).
+IMG_MAX_FETCH = 80       # at most this many NEW ficha fetches per search
+IMG_WORKERS = 8          # parallel ficha downloads
+IMG_TIMEOUT = 15         # seconds per ficha
 
 # Categories (the tail of the @type URI) that are kid-relevant. The UI shows
 # these; an empty "categories" filter means "all of these".
@@ -326,6 +332,127 @@ def get_street(ev):
     return ""
 
 
+# ── Official poster image from the madrid.es ficha ──────────────────────────
+# The open-data feed carries no image, but each event links to its ficha page
+# whose HTML embeds the real poster. curl_cffi (chrome impersonation) gets past
+# Akamai, so we can resolve posters server-side (works for web PWA + APK alike).
+_IMG_RE = re.compile(r'<img[^>]+src="([^"]+)"', re.I)
+_IMG_JUNK = (
+    "data:", "/assets/", "logo", "infovisitas", "/secciones/",
+    "actualidad_", "stage-ranking", ".svg", "spacer", "blank",
+    "escudo", "/imagenes/marca/",
+)
+_IMG_PREFER = ("/unidadesdescentralizadas/", "/unidadweb/ugbbdd/", "/ficheros/")
+
+
+def extract_ficha_image(html):
+    """Pick the real activity poster from ficha HTML, skip chrome/logos."""
+    if not html:
+        return ""
+    srcs = _IMG_RE.findall(html)
+
+    def is_junk(s):
+        low = s.lower()
+        return any(j in low for j in _IMG_JUNK)
+
+    def prefer(s):
+        low = s.lower()
+        return any(p in low for p in _IMG_PREFER)
+
+    pick = next((s for s in srcs if not is_junk(s) and prefer(s)), "")
+    if not pick:
+        # Fallback: first non-junk image at all.
+        pick = next((s for s in srcs if not is_junk(s)), "")
+    if not pick:
+        return ""
+    src = pick.replace("&amp;", "&")
+    if src.startswith("//"):
+        src = "https:" + src
+    elif src.startswith("/"):
+        src = "https://www.madrid.es" + src
+    return src
+
+
+def _load_img_cache():
+    try:
+        with open(IMG_CACHE, encoding="utf-8") as f:
+            return json.load(f) or {}
+    except Exception:
+        return {}
+
+
+def _save_img_cache(cache):
+    try:
+        os.makedirs(os.path.dirname(IMG_CACHE), exist_ok=True)
+        with open(IMG_CACHE, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def _fetch_one_ficha(link):
+    """Download one ficha and extract its poster URL. '' on any failure."""
+    try:
+        kw = {"timeout": IMG_TIMEOUT, "headers": {"User-Agent": "Mozilla/5.0"},
+              "allow_redirects": True}
+        if _IMPERSONATE:
+            kw["impersonate"] = _IMPERSONATE
+        r = creq.get(link, **kw)
+        if r.status_code != 200:
+            return ""
+        return extract_ficha_image(r.text)
+    except Exception:
+        return ""
+
+
+def resolve_images(activities):
+    """Fill each activity's "image" field from the ficha, using a disk cache.
+
+    Cached links are free. Up to IMG_MAX_FETCH new fichas are fetched in
+    parallel; the rest are left blank (the client falls back to a keyword
+    image). Activities are processed in result order (most relevant first).
+    """
+    cache = _load_img_cache()
+    to_fetch = []
+    for a in activities:
+        link = a.get("link") or ""
+        if not link:
+            a["image"] = ""
+            continue
+        if link in cache:
+            a["image"] = cache[link]
+        else:
+            a["image"] = ""
+            to_fetch.append(link)
+
+    # Only fetch the first N uncached links (keep the search responsive).
+    new_links = []
+    seen = set()
+    for link in to_fetch:
+        if link in seen:
+            continue
+        seen.add(link)
+        new_links.append(link)
+        if len(new_links) >= IMG_MAX_FETCH:
+            break
+
+    if new_links:
+        progress(phase="images", msg=f"Buscando imagenes oficiales ({len(new_links)})…")
+        results = {}
+        with ThreadPoolExecutor(max_workers=IMG_WORKERS) as ex:
+            for link, img in zip(new_links, ex.map(_fetch_one_ficha, new_links)):
+                results[link] = img or ""
+        cache.update(results)
+        _save_img_cache(cache)
+        # Apply freshly fetched images back onto the activities.
+        for a in activities:
+            link = a.get("link") or ""
+            if link in results and results[link]:
+                a["image"] = results[link]
+
+    return activities
+
+
 def run(job):
     age = _as_int(job.get("age"), default=3, lo=0, hi=17)
     weeks = _as_int(job.get("weeks"), default=3, lo=1, hi=12)
@@ -414,11 +541,14 @@ def run(job):
             "address": get_street(ev),
             "lat": lat, "lon": lon,
             "link": (ev.get("link") or "").strip(),
+            "image": "",               # official poster, filled by resolve_images
             "dates": dates,            # concrete dates within the window
         })
 
     # Within each day, show the most relevant kid activities first.
     out.sort(key=lambda a: (a["dates"][0], -a["score"], a["title"].lower()))
+    # Resolve official poster images (cached + parallel), in result order.
+    resolve_images(out)
     progress(phase="done", msg=f"{len(out)} actividades encontradas")
 
     return {
