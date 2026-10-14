@@ -141,55 +141,59 @@
   .empty .big{font-size:46px;margin-bottom:10px}
 
   /* ===== Home full-screen swipeable card deck ===== */
-  #v-home.deckmode{display:none;flex-direction:column;padding:0}
+  /* ===== Home full-screen swipeable card deck (fixed dark palette from design-cards-real) ===== */
+  #v-home.deckmode{display:none;flex-direction:column;padding:0;background:#0f1118}
   #v-home.deckmode.on{display:flex}
   #v-home.deckmode .top{flex:none}
+  #v-home.deckmode .top h3{color:#e8eaf2}
+  #v-home.deckmode .top .sub{color:#9aa0b5}
   #v-home.deckmode .pills{flex:none}
   #v-home.deckmode .bar{flex:none}
-  #v-home.deckmode .statusmsg{flex:none}
+  #v-home.deckmode .statusmsg{flex:none;color:#9aa0b5}
   #v-home.deckmode #v-home-feed{flex:1;min-height:0;display:flex;flex-direction:column}
+  /* counter top-right next to the title, like the prototype */
+  #v-home.deckmode .top{display:flex;align-items:center;justify-content:space-between}
+  .dcount{flex:none;font-size:12px;font-weight:800;color:#9aa0b5;background:#171a27;border:1px solid #262a3d;padding:6px 12px;border-radius:20px}
+  .dcount b{color:#fff}
   .deckwrap{flex:1;display:flex;flex-direction:column;min-height:0}
   .deck{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
     scroll-behavior:smooth;-webkit-overflow-scrolling:touch;min-height:0}
   .deck::-webkit-scrollbar{display:none}
   .dslide{flex:0 0 100%;width:100%;height:100%;scroll-snap-align:center;padding:2px 14px 10px;display:flex}
-  .dcard{flex:1;display:flex;flex-direction:column;background:var(--card);border-radius:24px;overflow:hidden;
-    box-shadow:0 14px 40px rgba(0,0,0,.28);border:1px solid var(--line);min-height:0}
-  .dhero{position:relative;height:44%;flex:none;display:flex;align-items:flex-end;padding:16px;color:#fff;
+  .dcard{flex:1;display:flex;flex-direction:column;background:#171a27;border-radius:24px;overflow:hidden;
+    box-shadow:0 14px 40px rgba(0,0,0,.45);border:1px solid #262a3d;min-height:0}
+  .dhero{position:relative;height:46%;flex:none;display:flex;align-items:flex-end;padding:18px;color:#fff;
     background-size:cover;background-position:center}
   .dhero .dphoto{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .4s}
   .dhero.hasphoto .dphoto{opacity:1}
   .dhero.hasphoto .demoji{display:none}
-  .dhero .dcat{position:absolute;top:14px;left:14px;font-size:10px;font-weight:900;text-transform:uppercase;
-    letter-spacing:.5px;background:rgba(0,0,0,.5);padding:5px 11px;border-radius:18px;z-index:3}
-  .dhero .dfav{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);border:0;color:#fff;font-size:19px;
-    width:38px;height:38px;border-radius:50%;cursor:pointer;line-height:1;z-index:3}
+  .dhero .dcat{position:absolute;top:16px;left:16px;font-size:10px;font-weight:900;text-transform:uppercase;
+    letter-spacing:.6px;background:rgba(0,0,0,.5);padding:6px 12px;border-radius:20px;backdrop-filter:blur(4px);z-index:3}
+  .dhero .dfav{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.5);border:0;color:#fff;font-size:20px;
+    width:40px;height:40px;border-radius:50%;cursor:pointer;line-height:1;backdrop-filter:blur(4px);z-index:3}
   .dhero .dfav.on{color:#ffd84d}
-  .dhero .dsrc{position:absolute;bottom:12px;right:12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.85);
-    background:rgba(0,0,0,.45);padding:3px 7px;border-radius:9px;z-index:3}
-  .dhero .demoji{position:absolute;right:18px;top:44%;transform:translateY(-50%);font-size:66px;opacity:.9;z-index:1}
-  .dhero h4{position:relative;margin:0;font-size:23px;font-weight:900;line-height:1.1;
-    text-shadow:0 2px 12px rgba(0,0,0,.7);max-width:86%;z-index:3}
-  .dhero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),transparent 55%);z-index:2}
-  .dbody{flex:1;overflow-y:auto;padding:14px 16px 16px;min-height:0}
+  .dhero .dsrc{position:absolute;bottom:14px;right:14px;font-size:9px;font-weight:700;color:rgba(255,255,255,.85);
+    background:rgba(0,0,0,.45);padding:3px 8px;border-radius:10px;z-index:3}
+  .dhero .demoji{position:absolute;right:20px;top:44%;transform:translateY(-50%);font-size:70px;opacity:.9;z-index:1}
+  .dhero h4{position:relative;margin:0;font-size:24px;font-weight:900;line-height:1.1;
+    text-shadow:0 2px 14px rgba(0,0,0,.75);max-width:88%;z-index:3}
+  .dhero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75),transparent 55%);z-index:2}
+  .dbody{flex:1;overflow-y:auto;padding:16px 18px 20px;min-height:0}
   .dbody::-webkit-scrollbar{width:0}
-  .dmeta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-  .dmeta .t{font-size:11px;font-weight:800;padding:5px 9px;border-radius:8px;background:var(--accent-soft);color:var(--accent-soft-ink)}
-  .dmeta .t.free{background:#eafaf0;color:#167a43}
-  .dwhere{font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.4}
-  .dwhere b{color:var(--ink);font-weight:700}
-  .ddesc{font-size:14px;line-height:1.55}
-  .ddesc .lbl{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
-  .dacts{flex:none;display:flex;gap:7px;padding:11px 14px;background:var(--card);border-top:1px solid var(--line)}
-  .dacts a{flex:1;border:0;font-family:inherit;font-size:12.5px;font-weight:800;padding:12px 6px;border-radius:12px;
+  .dmeta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+  .dmeta .t{font-size:11px;font-weight:800;padding:5px 10px;border-radius:8px;background:rgba(255,255,255,.07);color:#e8eaf2}
+  .dmeta .t.free{background:#113b28;color:#4ade80}
+  .dwhere{font-size:13px;color:#9aa0b5;margin-bottom:14px;line-height:1.4}
+  .dwhere b{color:#e8eaf2;font-weight:700}
+  .ddesc{font-size:14.5px;line-height:1.55;color:#cfd3e4}
+  .ddesc .lbl{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#9aa0b5;margin-bottom:6px}
+  .dacts{flex:none;display:flex;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:#171a27;border-top:1px solid #262a3d}
+  .dacts a{flex:1;border:0;font-family:inherit;font-size:13px;font-weight:800;padding:13px 8px;border-radius:13px;
     text-align:center;text-decoration:none;cursor:pointer;white-space:nowrap}
-  .dacts a.g{background:var(--accent-soft);color:var(--accent-soft-ink)}
-  .dacts a.p{background:var(--accent);color:var(--accent-ink)}
-  .ddots{flex:none;display:flex;gap:5px;justify-content:center;padding:7px 0 9px;flex-wrap:wrap}
-  .ddot{width:6px;height:6px;border-radius:50%;background:var(--line);transition:.2s}
-  .ddot.on{background:var(--accent);width:18px}
-  .ddaylbl{flex:none;text-align:center;font-size:12px;font-weight:800;color:var(--muted);padding:2px 0 4px}
-  .ddaylbl .today{color:var(--accent)}
+  .dacts a.g{background:rgba(255,255,255,.08);color:#e8eaf2}
+  .dacts a.p{background:#7b2d8e;color:#fff}
+  .ddaylbl{flex:none;text-align:center;font-size:12px;font-weight:800;color:#9aa0b5;padding:2px 0 4px}
+  .ddaylbl .today{color:#c084e8}
 
   /* Day group headers + loading */
   .daysep{display:flex;align-items:baseline;gap:8px;margin:22px 2px 2px;padding:0 2px}
@@ -500,14 +504,21 @@ function renderHome(){
 
   if(!cards.length){
     home.classList.remove("deckmode");
+    const oldc=home.querySelector(".top #dcount"); if(oldc) oldc.remove();
     host.innerHTML=`<div class="empty"><div class="big">🔍</div>No hay actividades para estos filtros.<br>Prueba a ampliar el periodo o quitar filtros.</div>`;
     return;
   }
 
   home.classList.add("deckmode");
   const slides=cards.map(c=>deckCardHTML(c.a,c.lbl)).join("");
-  const dots=cards.map((_,i)=>`<span class="ddot ${i===0?'on':''}"></span>`).join("");
-  host.innerHTML=`<div class="deckwrap"><div class="deck" id="deck">${slides}</div><div class="ddots" id="ddots">${dots}</div></div>`;
+  host.innerHTML=`<div class="deckwrap"><div class="deck" id="deck">${slides}</div></div>`;
+  // counter in the header top-right (prototype style)
+  const topEl=home.querySelector(".top");
+  if(topEl){
+    let c=topEl.querySelector("#dcount");
+    if(!c){ c=document.createElement("div"); c.id="dcount"; c.className="dcount"; topEl.appendChild(c); }
+    c.innerHTML=`<b>1</b> / ${cards.length}`;
+  }
   wireDeck(host, cards.length);
 }
 
@@ -520,15 +531,15 @@ function wireDeck(host, total){
   host.querySelectorAll("[data-share]").forEach(b=> b.onclick=(e)=>{
     e.preventDefault(); const a=actById(b.dataset.share); if(a) shareActivity(a);
   });
-  // Active-slide tracking (dots)
+  // Active-slide tracking (counter in header)
   const deck=host.querySelector("#deck");
-  const dotsEl=host.querySelector("#ddots");
+  const countEl=document.querySelector("#v-home .top #dcount");
   let idx=0;
   if(deck){
     deck.addEventListener("scroll",()=>{
       const i=Math.round(deck.scrollLeft/deck.clientWidth);
       if(i!==idx){ idx=i;
-        if(dotsEl) dotsEl.querySelectorAll(".ddot").forEach((d,j)=>d.classList.toggle("on",j===i));
+        if(countEl) countEl.innerHTML=`<b>${i+1}</b> / ${total}`;
         lazyImages(deck, i);
       }
     }, {passive:true});
