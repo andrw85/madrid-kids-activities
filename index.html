@@ -463,19 +463,20 @@ function parseFichaImage(html){
   return src;
 }
 // Openverse keyword fallback (free, no key, works in browser + native).
-// Several queries per category so cards don't all share one image.
+// Keywords chosen by voting on real Openverse results (best-looking, kid-friendly).
+// Where several candidates scored well, a 2nd keyword adds variety across cards.
 const CAT_QUERY = {
-  "CuentacuentosTiteresMarionetas":["puppet show kids","marionette theatre","storytelling children"],
-  "TeatroPerformance":["children theatre stage","kids drama play","school play performance"],
-  "CircoMagia":["kids circus colorful","juggling performer","magic show children"],
-  "CursosTalleres":["kids craft workshop","children painting art","hands on kids workshop"],
-  "Musica":["children concert","kids playing instruments","youth orchestra"],
-  "DanzaBaile":["children dance class","kids ballet","dance performance kids"],
-  "CineActividadesAudiovisuales":["kids cinema fun","children watching film","animation kids"],
-  "ExcursionesItinerariosVisitas":["family museum visit","children exploring park","kids outdoor tour"],
-  "ClubesLectura":["children reading books","kids library","picture books kids"],
-  "ActividadesCalleArteUrbano":["colorful street art","kids mural painting","urban art bright"],
-  "Fiestas":["children party colorful","kids festival fun","balloons celebration kids"]
+  "CuentacuentosTiteresMarionetas":["teatro titeres infantil","cuentacuentos biblioteca","puppet show colorful"],
+  "TeatroPerformance":["obra infantil escenario","titeres escenario niños"],
+  "CircoMagia":["payaso circo colores","acrobata circo"],
+  "CursosTalleres":["manualidades niños pintura","children craft colorful"],
+  "Musica":["coro infantil"],
+  "DanzaBaile":["danza infantil","baile tradicional niños"],
+  "CineActividadesAudiovisuales":["cine infantil"],
+  "ExcursionesItinerariosVisitas":["museo sala exposicion","niños visita museo"],
+  "ClubesLectura":["biblioteca infantil libros"],
+  "ActividadesCalleArteUrbano":["colorful street mural","mural infantil colores"],
+  "Fiestas":["kids carnival colorful"]
 };
 // Reject obviously wrong / creepy / adult / dull results by title+tags.
 const IMG_BAD = /\b(horror|scary|death|dead|grave|cemetery|funeral|blood|war|weapon|gun|nude|naked|erotic|sexy|lingerie|bed|bedroom|hospital|sick|cry|sad|dark|ghost|skull|zombie|protest|smoke|cigarette|alcohol|drug)\b/i;
