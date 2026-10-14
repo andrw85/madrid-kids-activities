@@ -368,7 +368,7 @@ function actById(id){
 
 // ---- image resolution for the deck hero (priority: Ayto. ficha -> Openverse -> gradient) ----
 // Only the final URL is cached (per activity id) in localStorage; bytes are not stored.
-const IMG_CACHE_KEY = "mk_imgCache_v2";
+const IMG_CACHE_KEY = "mk_imgCache_v3";
 let IMG_CACHE = {};
 try { IMG_CACHE = JSON.parse(localStorage.getItem(IMG_CACHE_KEY) || "{}") || {}; } catch(_) { IMG_CACHE = {}; }
 function saveImgCache(){ try{ localStorage.setItem(IMG_CACHE_KEY, JSON.stringify(IMG_CACHE)); }catch(_){} }
@@ -485,10 +485,12 @@ async function applyHeroImage(a, heroEl){
     };
     im.src = url;
   };
-  // 1) cached result
+  // 1) cached result (re-validate non-official picks against the blocklist)
   const cached = IMG_CACHE[id];
-  if(cached && cached.url){ show(cached.url, cached.official); return; }
-  if(cached && cached.none){ return; } // known: no image, keep gradient
+  if(cached && cached.url){
+    if(cached.official || !IMG_BAD.test(cached.url)){ show(cached.url, cached.official); return; }
+    delete IMG_CACHE[id]; saveImgCache(); // bad cached pick -> drop and re-resolve
+  } else if(cached && cached.none){ return; } // known: no image, keep gradient
 
   // 2) official ficha image (native/APK only)
   if(a.link){
