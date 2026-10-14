@@ -121,24 +121,29 @@
   .mapcard .btns a.p{flex-basis:100%;background:var(--accent);color:var(--accent-ink)}
   .mapcard .btns a.g{background:var(--accent-soft);color:var(--accent-soft-ink)}
 
-  /* Leaflet chrome -> follow the app theme (no stray white boxes) */
-  .leaflet-popup-content-wrapper,.leaflet-tooltip{
-    background:var(--card);color:var(--ink);
-    border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
-  .leaflet-popup-content{font-size:12.5px;line-height:1.4;color:var(--ink)}
-  .leaflet-popup-tip{background:var(--card);box-shadow:none}
-  .leaflet-tooltip{padding:4px 8px;font-size:11px;font-weight:700}
-  .leaflet-tooltip-top:before{border-top-color:var(--card)}
-  .leaflet-tooltip-bottom:before{border-bottom-color:var(--card)}
-  .leaflet-tooltip-left:before{border-left-color:var(--card)}
-  .leaflet-tooltip-right:before{border-right-color:var(--card)}
-  .leaflet-popup-close-button{color:var(--muted)}
-  .leaflet-control-attribution{
-    background:color-mix(in srgb,var(--card) 85%,transparent);color:var(--muted);
+  /* Leaflet chrome -> follow the app theme (no stray white boxes).
+     Leaflet's CSS is injected at runtime AFTER this <style>, so we raise
+     specificity with #map and use !important to win the cascade. */
+  #map .leaflet-popup-content-wrapper,
+  #map .leaflet-tooltip{
+    background:var(--card)!important;color:var(--ink)!important;
+    border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,.22)!important}
+  #map .leaflet-popup-content{font-size:12.5px;line-height:1.4;color:var(--ink)!important}
+  #map .leaflet-popup-tip{background:var(--card)!important;box-shadow:none!important}
+  #map .leaflet-tooltip{padding:4px 8px;font-size:11px;font-weight:700}
+  #map .leaflet-tooltip-top:before{border-top-color:var(--card)!important}
+  #map .leaflet-tooltip-bottom:before{border-bottom-color:var(--card)!important}
+  #map .leaflet-tooltip-left:before{border-left-color:var(--card)!important}
+  #map .leaflet-tooltip-right:before{border-right-color:var(--card)!important}
+  #map .leaflet-popup-close-button{color:var(--muted)!important}
+  #map .leaflet-control-attribution{
+    background:color-mix(in srgb,var(--card) 88%,transparent)!important;color:var(--muted)!important;
     border-radius:8px 0 0 0}
-  .leaflet-control-attribution a{color:var(--accent-soft-ink)}
-  .leaflet-bar a{background:var(--card);color:var(--ink);border-bottom-color:var(--line)}
-  .leaflet-bar a:hover{background:var(--accent-soft)}
+  #map .leaflet-control-attribution a{color:var(--accent-soft-ink)!important}
+  #map .leaflet-bar a,
+  #map .leaflet-bar a:link,
+  #map .leaflet-bar a:visited{background:var(--card)!important;color:var(--ink)!important;border-bottom-color:var(--line)!important}
+  #map .leaflet-bar a:hover{background:var(--accent-soft)!important}
 
   /* SEARCH */
   .search{padding:8px 18px 24px}
@@ -187,8 +192,14 @@
   #v-home.deckmode .pill{background:#171a27;color:#c7cbe0;border:1px solid #262a3d}
   #v-home.deckmode .pill.on{background:#7b2d8e;color:#fff;border-color:#7b2d8e}
 
-  /* Favorites + Settings: fixed dark palette to match the Home deck */
-  #v-fav, #v-settings{
+  /* Favorites reuses the Home full-screen card deck */
+  #v-fav.deckmode{display:none;flex-direction:column;padding:0;background:#0f1118}
+  #v-fav.deckmode.on{display:flex}
+  #v-fav.deckmode .secttl{flex:none;color:#e8eaf2;display:flex;align-items:center;justify-content:space-between}
+  #v-fav.deckmode #v-fav-feed{flex:1;min-height:0;display:flex;flex-direction:column}
+
+  /* Favorites + Settings + Map: fixed dark palette to match the Home deck */
+  #v-fav, #v-settings, #v-map{
     --accent:#c084e8; --accent-ink:#fff; --accent-soft:#1b2030; --accent-soft-ink:#c4b5fd;
     --bg:#0f1118; --ink:#e8eaf2; --muted:#9aa0b5; --card:#171a27; --line:#262a3d;
     background:#0f1118; color:#e8eaf2;
@@ -625,18 +636,21 @@ function renderHome(){
   wireDeck(host, cards.length);
 }
 
-function wireDeck(host, total){
+function wireDeck(host, total, countEl){
   // Favorite + share
   host.querySelectorAll(".dfav").forEach(s=> s.onclick=()=>{
     const id=s.dataset.fav; const a=actById(id);
-    if(a){ const now=toggleFavObj(a); s.classList.toggle("on",now); s.textContent=now?"★":"☆"; }
+    if(a){ const now=toggleFavObj(a); s.classList.toggle("on",now); s.textContent=now?"★":"☆";
+      // In the Favorites view, drop a card as soon as it is unfavorited.
+      if(!now && host.id==="v-fav"){ renderFavs(); }
+    }
   });
   host.querySelectorAll("[data-share]").forEach(b=> b.onclick=(e)=>{
     e.preventDefault(); const a=actById(b.dataset.share); if(a) shareActivity(a);
   });
   // Active-slide tracking (counter in header)
-  const deck=host.querySelector("#deck");
-  const countEl=document.querySelector("#v-home .top #dcount");
+  const deck=host.querySelector(".deck");
+  if(countEl===undefined) countEl=document.querySelector("#v-home .top #dcount");
   let idx=0;
   if(deck){
     deck.addEventListener("scroll",()=>{
@@ -703,24 +717,28 @@ function wireFeed(host){
   });
 }
 
-// ---- Favorites view ----
+// ---- Favorites view (reuses the Home full-screen card deck) ----
 function renderFavs(){
   const host=document.getElementById("v-fav");
   const acts=[...FAVS.values()];
   if(!acts.length){
+    host.classList.remove("deckmode");
     host.innerHTML=`<div class="secttl">★ Favoritos</div>
       <div class="empty"><div class="big">★</div>Aún no has guardado nada.<br>Toca la estrella en una tarjeta o en el mapa.</div>`;
     return;
   }
-  heroSeq=0;
-  host.innerHTML=`<div class="secttl">★ Favoritos (${acts.length})</div>
-    <div class="feed">${acts.map(tileHTML).join("")}</div>`;
-  wireFeed(host);
-  // Show the same hero image as the Home cards (uses the shared IMG_CACHE).
-  host.querySelectorAll(".tile .hero[data-img]").forEach(hero=>{
-    const a=actById(hero.dataset.img);
-    if(a) applyHeroImage(a, hero);
-  });
+  deckHeroSeq=0;
+  host.classList.add("deckmode");
+  // Day label per activity when available, else nothing.
+  const slides=acts.map(a=>{
+    const d=(a.dates&&a.dates[0])||null;
+    const lbl=d?`<span>${esc(dayLabel(d))}</span>`:"";
+    return deckCardHTML(a, lbl);
+  }).join("");
+  host.innerHTML=`<div class="secttl">★ Favoritos <span class="dcount" id="favcount"><b>1</b> / ${acts.length}</span></div>
+    <div id="v-fav-feed"><div class="deckwrap"><div class="deck">${slides}</div></div></div>`;
+  const countEl=host.querySelector("#favcount");
+  wireDeck(host, acts.length, countEl);
 }
 
 // ---- Map view (real Leaflet) ----
