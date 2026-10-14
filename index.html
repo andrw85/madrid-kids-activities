@@ -358,7 +358,7 @@ function actById(id){
 
 // ---- image resolution for the deck hero (priority: Ayto. ficha -> Openverse -> gradient) ----
 // Only the final URL is cached (per activity id) in localStorage; bytes are not stored.
-const IMG_CACHE_KEY = "mk_imgCache";
+const IMG_CACHE_KEY = "mk_imgCache_v2";
 let IMG_CACHE = {};
 try { IMG_CACHE = JSON.parse(localStorage.getItem(IMG_CACHE_KEY) || "{}") || {}; } catch(_) { IMG_CACHE = {}; }
 function saveImgCache(){ try{ localStorage.setItem(IMG_CACHE_KEY, JSON.stringify(IMG_CACHE)); }catch(_){} }
@@ -374,12 +374,41 @@ function nativeHttpGet(url){
 // Parse the activity ficha HTML for the official poster image.
 function parseFichaImage(html){
   if(!html) return null;
-  const m = html.match(/<div class="image-content[^"]*">[\s\S]*?<img[^>]+src="([^"]+)"/i)
-         || html.match(/<div class="tramites-content">[\s\S]*?<img[^>]+src="([^"]+)"/i);
-  if(!m) return null;
-  let src = m[1];
-  if(src.indexOf("//")===0) src = "https:"+src;
-  else if(src.charAt(0)==="/") src = "https://www.madrid.es"+src;
+  // Collect every <img src="..."> and pick the real poster, skipping chrome/logos.
+  const srcs = [];
+  const re = /<img[^>]+src="([^"]+)"/gi;
+  let m;
+  while((m = re.exec(html))){ srcs.push(m[1]); }
+  const isJunk = (s) => {
+    const low = s.toLowerCase();
+    return low.indexOf("data:") === 0 ||
+           low.indexOf("/assets/") !== -1 ||
+           low.indexOf("logo") !== -1 ||
+           low.indexOf("infovisitas") !== -1 ||
+           low.indexOf("/secciones/") !== -1 ||       // generic site banners
+           low.indexOf("actualidad_") !== -1 ||
+           low.indexOf("stage-ranking") !== -1 ||
+           low.indexOf(".svg") !== -1 ||
+           low.indexOf("spacer") !== -1 || low.indexOf("blank") !== -1;
+  };
+  // Preferred: the folders where activity posters actually live.
+  const prefer = (s) => {
+    const low = s.toLowerCase();
+    return low.indexOf("/unidadesdescentralizadas/") !== -1 ||
+           low.indexOf("/unidadweb/ugbbdd/") !== -1 ||
+           low.indexOf("/ficheros/") !== -1;
+  };
+  let pick = srcs.find(s => !isJunk(s) && prefer(s));
+  // Fallback: inside the known content containers (older ficha layout).
+  if(!pick){
+    const mm = html.match(/<div class="image-content[^"]*">[\s\S]*?<img[^>]+src="([^"]+)"/i)
+            || html.match(/<div class="tramites-content">[\s\S]*?<img[^>]+src="([^"]+)"/i);
+    if(mm && !isJunk(mm[1])) pick = mm[1];
+  }
+  if(!pick) return null;
+  let src = pick.replace(/&amp;/g, "&");
+  if(src.indexOf("//") === 0) src = "https:" + src;
+  else if(src.charAt(0) === "/") src = "https://www.madrid.es" + src;
   return src;
 }
 // Openverse keyword fallback (free, no key, works in browser + native).
