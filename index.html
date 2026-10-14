@@ -672,6 +672,19 @@ function renderHome(){
     c.innerHTML=`<b>1</b> / ${cards.length}`;
   }
   wireDeck(host, cards.length);
+  // Warm the per-keyword image pools in parallel so later cards resolve
+  // instantly. Only distinct keywords actually present in this result set.
+  prefetchImagePools(cards.map(c=>c.a));
+}
+
+// Kick off (and cache) the Openverse search for every distinct keyword used by
+// the given activities, so hero images are ready before the card is swiped to.
+function prefetchImagePools(acts){
+  const seen = {};
+  for(const a of acts){
+    const list = CAT_QUERY[a.category]; if(!list) continue;
+    for(const q of list){ if(!seen[q]){ seen[q]=1; fetchOvPool(q); } }
+  }
 }
 
 function wireDeck(host, total, countEl){
@@ -706,7 +719,11 @@ function wireDeck(host, total, countEl){
 function lazyImages(deck, center){
   if(!deck) return;
   const slides=deck.querySelectorAll(".dslide");
-  for(let j=Math.max(0,center-1); j<=center+1 && j<slides.length; j++){
+  // Preload a wider window around the current card. Resolutions run in
+  // parallel (applyHeroImage is async and not awaited) and share the
+  // per-keyword Openverse cache, so this stays cheap.
+  const R=3;
+  for(let j=Math.max(0,center-R); j<=center+R && j<slides.length; j++){
     const hero=slides[j].querySelector(".dhero");
     if(hero && !hero.dataset.resolved){
       hero.dataset.resolved="1";
