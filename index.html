@@ -337,12 +337,12 @@ function dayLabel(iso){
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function prettyDist(s){ return (s||"").replace(/([a-z])([A-Z])/g,"$1 $2").replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()); }
 function ageText(a){
-  if(!a.age_known) return "edad n/d";
+  if(!a.age_known) return "Todas las edades";
   const [lo,hi]=a.age_range||[];
   if(lo!=null&&hi!=null) return lo===hi?`${lo} años`:`${lo}–${hi} años`;
   if(lo!=null) return `desde ${lo}`;
   if(hi!=null) return `hasta ${hi}`;
-  return "todas edades";
+  return "Todas las edades";
 }
 function dirLink(a){
   if(a.lat&&a.lon) return `https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}`;
