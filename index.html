@@ -112,6 +112,25 @@
   .mapcard .btns a.p{flex-basis:100%;background:var(--accent);color:var(--accent-ink)}
   .mapcard .btns a.g{background:var(--accent-soft);color:var(--accent-soft-ink)}
 
+  /* Leaflet chrome -> follow the app theme (no stray white boxes) */
+  .leaflet-popup-content-wrapper,.leaflet-tooltip{
+    background:var(--card);color:var(--ink);
+    border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+  .leaflet-popup-content{font-size:12.5px;line-height:1.4;color:var(--ink)}
+  .leaflet-popup-tip{background:var(--card);box-shadow:none}
+  .leaflet-tooltip{padding:4px 8px;font-size:11px;font-weight:700}
+  .leaflet-tooltip-top:before{border-top-color:var(--card)}
+  .leaflet-tooltip-bottom:before{border-bottom-color:var(--card)}
+  .leaflet-tooltip-left:before{border-left-color:var(--card)}
+  .leaflet-tooltip-right:before{border-right-color:var(--card)}
+  .leaflet-popup-close-button{color:var(--muted)}
+  .leaflet-control-attribution{
+    background:color-mix(in srgb,var(--card) 85%,transparent);color:var(--muted);
+    border-radius:8px 0 0 0}
+  .leaflet-control-attribution a{color:var(--accent-soft-ink)}
+  .leaflet-bar a{background:var(--card);color:var(--ink);border-bottom-color:var(--line)}
+  .leaflet-bar a:hover{background:var(--accent-soft)}
+
   /* SEARCH */
   .search{padding:8px 18px 24px}
   .cats{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
