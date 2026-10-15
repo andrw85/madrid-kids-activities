@@ -8,6 +8,7 @@
 const SHELL = "mk-shell-v3";
 const CDN   = "mk-cdn-v1";
 const TILES = "mk-tiles-v1";
+const IMAGES = "mk-img-v1";    // category pool WebP + Pexels CDN, cache-on-first-view
 
 // Shell URL = the scope this SW is registered under (works at "/" or "/subpath/").
 const SHELL_URL = new URL("./", self.registration ? self.registration.scope : self.location).pathname;
@@ -36,7 +37,7 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
-    const keep = new Set([SHELL, CDN, TILES]);
+    const keep = new Set([SHELL, CDN, TILES, IMAGES]);
     const names = await caches.keys();
     await Promise.all(names.filter(n => !keep.has(n)).map(n => caches.delete(n)));
     await self.clients.claim();
@@ -106,6 +107,29 @@ self.addEventListener("fetch", (e) => {
       const r = await fetch(req);
       if (r.ok) cache.put(req, r.clone());
       return r;
+    })());
+    return;
+  }
+
+  // Category pool images (local img/*.webp) and Pexels CDN photos: cache-first,
+  // populated ON FIRST VIEW (no bulk precache -> install stays fast, first paint
+  // of the app is never blocked by images). A given image is fetched once, then
+  // served from cache forever (offline-safe for the committed local pool).
+  const isLocalPoolImg = url.origin === self.location.origin &&
+      /\/img\/.+\.webp$/i.test(url.pathname);
+  const isPexelsImg = url.hostname === "images.pexels.com";
+  if (isLocalPoolImg || isPexelsImg) {
+    e.respondWith((async () => {
+      const cache = await caches.open(IMAGES);
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      try {
+        const r = await fetch(req);
+        if (r && (r.ok || r.type === "opaque")) cache.put(req, r.clone());
+        return r;
+      } catch (_) {
+        return cached || new Response("offline", { status: 503 });
+      }
     })());
     return;
   }

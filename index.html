@@ -511,6 +511,24 @@ function hashIdx(id, n){
   for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i))|0; }
   return n>0 ? (Math.abs(h) % n) : 0;
 }
+// ── Local image pool (committed WebP, offline, no network) ──────────────────
+// 8 curated 600x185 WebP per category live under img/<category>/NN.webp.
+// Each card picks one deterministically by activity id, so a given activity
+// always shows the same image but different activities spread across the pool.
+// These are lazy-loaded files: they never block first paint, and the service
+// worker caches them on first view (see sw.js). ~1 MB total committed.
+const CAT_POOL = {
+  "CuentacuentosTiteresMarionetas":8, "TeatroPerformance":8, "CircoMagia":8,
+  "CursosTalleres":8, "Musica":8, "DanzaBaile":8, "CineActividadesAudiovisuales":8,
+  "ExcursionesItinerariosVisitas":8, "ClubesLectura":8, "ActividadesCalleArteUrbano":8,
+  "Fiestas":8
+};
+function localPoolImage(a){
+  const n = CAT_POOL[a.category] || 0;
+  if(!n) return null;
+  const i = hashIdx(favId(a) + "|pool", n) + 1;      // 1..n, stable per activity
+  return "img/" + a.category + "/" + String(i).padStart(2,"0") + ".webp";
+}
 // In-memory cache: one Openverse search per keyword (not per card). Cards in
 // the same category reuse the pool and just pick a different photo by hash.
 const OV_POOL = {};            // query -> Promise<array of image urls>
@@ -540,6 +558,44 @@ async function openverseImage(a){
   if(!pool.length) return null;
   // Deterministic pick keyed on the activity id -> stable, varied across cards.
   return pool[hashIdx(favId(a)+"|img", pool.length)];
+}
+// ── Optional Pexels runtime top-up (extra variety when online) ──────────────
+// The committed local pool (8/category) always works offline. When online AND
+// a Pexels API key is configured, we fetch a larger pool per category so cards
+// get more variety than the 8 baked-in images. Keyless by default (skips).
+// Get a free key at https://www.pexels.com/api/ and paste it below to enable.
+const PEXELS_KEY = "";          // "" = disabled (local pool only)
+const PEXELS_QUERY = {
+  "CuentacuentosTiteresMarionetas":"puppet show for children",
+  "TeatroPerformance":"children theatre stage play",
+  "CircoMagia":"children circus clown",
+  "CursosTalleres":"kids craft workshop",
+  "Musica":"children playing music instrument",
+  "DanzaBaile":"children dance class",
+  "CineActividadesAudiovisuales":"cinema movie theater",
+  "ExcursionesItinerariosVisitas":"children museum visit",
+  "ClubesLectura":"child reading book",
+  "ActividadesCalleArteUrbano":"colorful street mural",
+  "Fiestas":"kids party celebration"
+};
+const PX_POOL = {};             // category -> Promise<array of image urls>
+function fetchPexelsPool(cat){
+  if(!PEXELS_KEY) return Promise.resolve([]);
+  if(PX_POOL[cat]) return PX_POOL[cat];
+  const q = PEXELS_QUERY[cat] || "children activity";
+  const url = "https://api.pexels.com/v1/search?per_page=24&orientation=landscape&q=" + encodeURIComponent(q);
+  PX_POOL[cat] = fetch(url, { headers:{ Authorization: PEXELS_KEY } })
+    .then(r => r.ok ? r.json() : {photos:[]})
+    .then(j => (j.photos||[])
+      .map(p => p.src && (p.src.landscape || p.src.medium || p.src.large))
+      .filter(Boolean))
+    .catch(() => []);
+  return PX_POOL[cat];
+}
+async function pexelsImage(a){
+  const pool = await fetchPexelsPool(a.category);
+  if(!pool.length) return null;
+  return pool[hashIdx(favId(a)+"|px", pool.length)];
 }
 // Resolve + apply the hero image for one card element. Non-blocking; card shows
 // the gradient+emoji immediately and upgrades in place when an image arrives.
@@ -577,7 +633,18 @@ async function applyHeroImage(a, heroEl){
     const ficha = parseFichaImage(html);
     if(ficha){ IMG_CACHE[id]={url:ficha,official:true}; saveImgCache(); show(ficha,true); return; }
   }
-  // 3) Openverse keyword fallback
+  // 3) image pool fallback (not the real activity poster, just a nice visual):
+  //    a) Pexels top-up for extra variety (online + key configured),
+  //    b) committed local pool (always available, offline-safe),
+  //    c) Openverse (legacy online fallback).
+  //    All are "imagen orientativa". The local pool guarantees a result.
+  let px = null;
+  try { px = await pexelsImage(a); } catch {}
+  if(px){ IMG_CACHE[id]={url:px,official:false}; saveImgCache(); show(px,false); return; }
+
+  const local = localPoolImage(a);
+  if(local){ IMG_CACHE[id]={url:local,official:false}; saveImgCache(); show(local,false); return; }
+
   const ov = await openverseImage(a);
   if(ov){ IMG_CACHE[id]={url:ov,official:false}; saveImgCache(); show(ov,false); return; }
   // 4) nothing -> remember, keep gradient+emoji
